@@ -91,7 +91,8 @@ def GProcessing():
             ('host','--'),('hostra',np.nan),('hostdec',np.nan),('hostoffsetang',np.nan),('hostoffsetdist',np.nan),\
             ('maxappmag',np.nan),("maxband",'--')])
 
-    for f in json_files[P:Q]:
+    kernelpars = []
+    for f in json_files:
         print f
         with open(f, 'r') as j:
             data = json.load(j)
