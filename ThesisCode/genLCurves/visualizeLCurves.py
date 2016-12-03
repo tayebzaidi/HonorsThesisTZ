@@ -14,27 +14,27 @@ def main():
         with open(os.path.join(path, filename), mode='r') as f:
             data_raw = json.load(f)
 
-        for key in data_raw:
-            time = data_raw[key]["smoothed"][0]
-            mag = data_raw[key]["smoothed"][1]
-            mag_err = data_raw[key]["smoothed"][2]
-            old_time = data_raw[key]["original"][0]
-            old_mag = data_raw[key]["original"][1]
-            old_mag_err = data_raw[key]["original"][2]
-            print("Resampled Time", time)
-            print("Old time", old_time)
-            print("Old mag", old_mag)
+        for filt in data_raw:
+            time = data_raw[filt]["modeldate"]
+            mag = data_raw[filt]["modelmag"]
+            mag_err = data_raw[filt]["modelerr"]
+            old_time = data_raw[filt]["mjd"]
+            old_mag = data_raw[filt]["mag"]
+            old_mag_err = data_raw[filt]["dmag"]
+            #print("Resampled Time", time)
+            #print("Old time", old_time)
+            #print("Old mag", old_mag)
 
             #Print outlier stats
             mag_range = np.ptp(mag)
             old_mag_range = np.ptp(old_mag)
-            print("Ranges", mag_range, old_mag_range)
+            print(objname, filt)
 
             #out_data = map(np.array,[time, mag, old_time, old_mag])
 
             fig = plt.figure(figsize=(10, 10))
             ax0 = fig.add_subplot(1, 1, 1)
-            ax0.errorbar(time, mag, yerr=mag_err, fmt='-k', label='Smoothed Data')
+            ax0.plot(time, mag,'-k', label='Smoothed Data')
             ax0.errorbar(old_time, old_mag, fmt='r', yerr=old_mag_err,label='Original Data')
             plt.show()
 

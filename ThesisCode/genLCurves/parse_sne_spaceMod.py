@@ -94,8 +94,8 @@ def GProcessing():
 
 
     kernelpars = []
-    #for f in json_files[P:Q]:
-    for f in json_files:
+    for f in json_files[P:Q]:
+    #for f in json_files:
         print f
         with open(f, 'r') as j:
             data = json.load(j)
