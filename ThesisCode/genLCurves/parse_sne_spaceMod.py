@@ -210,14 +210,21 @@ def GProcessing():
             try:
                 tobj = TouchstoneObject(objname, time, mag, magerr, band)
                 outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=5)
+                outbspline = tobj.spline_smooth(per = False, minobs = 5, )
                 outjson = {}
-                print("Completed Gaussian Processing")
                 for filt in outgp:
+
+                    # Generate resampled values from the Gaussian Process regression
                     thisgp, thisjd, thismag, thisdmag = outgp[filt]
                     mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
                     thismod, modcovar = thisgp.predict(thismag, mod_dates)
                     thismody, modcovary = thisgp.predict(thismag, thisjd)
                     thiserr = np.sqrt(np.diag(modcovar))
+
+                    # Generate resampled values from the spline model
+                    thisbspline = outbspline[filt]
+                    thismod_bspline = scinterp.splev(mod_dates, thisbspline)
+
                     goodstatus = True
 
                     mad_test = np.median(np.abs(thismody - np.median(thismody)))
@@ -236,6 +243,7 @@ def GProcessing():
                                         'modeldate':mod_dates.tolist(),\
                                         'modelmag':thismod.tolist(),\
                                         'modelerr':thiserr.tolist(),\
+                                        'bsplinemag':thismod_bspline.tolist(),\
                                         'goodstatus':goodstatus}
                     kernelpars.append(thisgp.kernel.pars[0])
                 if len(outjson.keys()) > 0:    
