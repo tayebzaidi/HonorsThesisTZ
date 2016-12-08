@@ -65,7 +65,7 @@ def GProcessing():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     procs_num = comm.Get_size()
-    print procs_num, rank
+    print(procs_num, rank)
     json_files = glob.glob('sne-*/*json')
     nfiles = len(json_files)
     quotient = nfiles/procs_num+1
@@ -75,7 +75,7 @@ def GProcessing():
         P = nfiles                                                                                                
     if Q > nfiles:                                                                                              
         Q = nfiles
-    print procs_num, rank, nfiles, quotient, P, Q
+    print(procs_num, rank, nfiles, quotient, P, Q)
 
     destination = "/data/antares/tzaidi/lightCurveGen/sne.space/gp_smoothed/"
     destination2 = "/data/antares/aux/sne.space/parsed/"
@@ -96,7 +96,7 @@ def GProcessing():
     kernelpars = []
     for f in json_files[P:Q]:
     #for f in json_files:
-        print f
+        print(f)
         with open(f, 'r') as j:
             data = json.load(j)
             objname  = data.keys()[0]
@@ -250,8 +250,8 @@ def GProcessing():
                     with open(destination + objname+'_gpsmoothed.json', mode='w') as f:
                         json.dump(outjson, f, indent=2, sort_keys=True)
         
-            except np.linalg.linalg.LinAlgError, e:
-                print e
+            except np.linalg.linalg.LinAlgError as e:
+                print(e)
                 print("Failed to complete Gaussian Processing")
                 continue    
 
