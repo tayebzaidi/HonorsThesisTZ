@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 import sys
-sys.path.append('/data/antares/aux')
+#sys.path.append('/data/antares/aux')
+sys.path.append('mnt/data/antares/aux/sne.space/')
 import os
 import glob
 import json
@@ -79,7 +80,7 @@ def GProcessing():
 
     destination = "/data/antares/tzaidi/lightCurveGen/sne.space/gp_smoothed/"
     destination2 = "/data/antares/aux/sne.space/parsed/"
-    dict_list   = []
+    dict_list = []
 
     # setup quantities to test the presence/absence of
     badflags  = ("kcorrected", "scorrected", "mcorrected", "upperlimit", "lowerlimit")
