@@ -6,7 +6,7 @@ import argparse
 import glob
 import numpy as np
 import scipy
-import scipy.linalg 
+import scipy.linalg
 import scipy.interpolate as scinterp
 import scipy.optimize as op
 import astropy
@@ -404,7 +404,7 @@ class TouchstoneObject:
 
 
 
-    def spline_smooth(self, per=None, minobs=10, phase_offset=None, recompute=False):
+    def spline_smooth(self, per=None, minobs=15, phase_offset=None, recompute=False):
         """
         per = fit a periodic spline
         minobs = mininum number of observations in each filter before we fit
@@ -427,15 +427,69 @@ class TouchstoneObject:
             pb = filters[i]
             mask = (self.passband == pb)
             nobs = len(phase[mask])
+            print(nobs)
             if nobs < minobs:
+                print("Not enough observations in {}".format(pb))
                 continue
             m2 = phase[mask].argsort()
             minphase = phase[mask][m2].min()
             maxphase = phase[mask][m2].max()
-            useticks = outticks[((outticks > minphase) & (outticks < maxphase))]
-            tck = scinterp.splrep(phase[mask][m2], self.mag[mask][m2],\
-                     w=self.mag_err[mask][m2],\
-                     k=3, t=useticks, task=-1, per=per, xb=0., xe=1.)
+            phase_range = maxphase - minphase
+
+            #The current knot generation fails on non-periodic lightcurves
+            #useticks = outticks[((outticks > minphase) & (outticks < maxphase))]
+
+            #Knot generation based on the range of the dataset, with the same number as before
+            useticks = (outticks * phase_range) + minphase
+
+            #Test for monotonically increasing phase
+            mono_bool = np.any(np.diff(phase[mask][m2]) == 0)
+
+            mag = self.mag
+            mag_err = self.mag_err
+
+            #Fix repeated values
+            if(mono_bool):
+                diff_idx = np.where(np.diff(phase[mask][m2]) == 0)[0]
+                repeat_phases = np.split(diff_idx, np.where(np.diff(diff_idx) != 1)[0]+1)
+                #print("Repeat Phases", repeat_phases)
+
+                delete_idx = []
+
+                for repeat_phase in repeat_phases:
+                    new_mag = np.mean(mag[mask][m2][repeat_phase])
+                    new_err = np.sqrt(np.sum((mag_err[mask][m2][repeat_phase])**2))
+
+                    #Replace first value from the magnitude array
+                    mag[mask][m2][repeat_phase[-1]] = new_mag
+
+                    #Replace first value from the magnitude error array
+                    mag_err[mask][m2][repeat_phase[-1]] = new_err
+
+                    #Add to the delete_idx array
+                    delete_idx.extend(repeat_phase.tolist())
+
+                #Delete values from mag, mag_err, and phase
+                #print("DeleteIDX", delete_idx)
+                phase_spline = np.delete(phase[mask][m2], np.array(delete_idx))
+                mag = np.delete(mag[mask][m2], np.array(delete_idx))
+                mag_err = np.delete(mag_err[mask][m2], np.array(delete_idx))
+            else:
+                mag = mag[mask][m2]
+                mag_err = mag_err[mask][m2]
+                phase_spline = phase[mask][m2]
+
+            #Debug printing
+            #print("Used knots", useticks)
+            #print("Original Phase", phase[mask][m2])
+            #print("Phase", phase_spline)
+            #print("mag", mag)
+            #print("Error", mag_err)
+            #print(np.diff(phase_spline))
+            #print(any(np.diff(phase_spline) <= 0))
+            tck = scinterp.splrep(phase_spline, mag,\
+                     w=1./mag_err,\
+                     k=3, per=per)
             outtck[pb] = tck
         self.outtck = outtck
         return outtck 

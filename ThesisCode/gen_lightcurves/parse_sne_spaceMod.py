@@ -11,6 +11,7 @@ from matplotlib.mlab import rec2csv, rec2txt
 from astropy.visualization import hist
 from collections import Counter, OrderedDict
 from ANTARES_object import TouchstoneObject
+import scipy.interpolate as scinterp
 from mpi4py import MPI
 import pickle
 
@@ -78,8 +79,8 @@ def GProcessing():
         Q = nfiles
     print(procs_num, rank, nfiles, quotient, P, Q)
 
-    destination = "~/nfs_share/tzaidi/HonorsThesisTZ/ThesisCode/genLCurves/gp_smoothed/"
-    destination2 = "/data/antares/aux/sne.space/parsed/"
+    destination = "/home/antares/nfs_share/tzaidi/HonorsThesisTZ/ThesisCode/genLCurves/gp_smoothed/"
+    destination2 = "/mnt/data/antares/aux/sne.space/parsed/"
     dict_list = []
 
     # setup quantities to test the presence/absence of
@@ -102,8 +103,8 @@ def GProcessing():
         print(f)
         with open(f, 'r') as j:
             data = json.load(j)
-            objname = next(iter(data))
-            keys = data[objname].keys()
+            objname = list(data.keys())[0]
+            keys = list(data[objname].keys())
             tempo_dict = {}
             tempo_dict['name'] = objname
             tempo_dict['status'] = 'good'
@@ -133,7 +134,7 @@ def GProcessing():
 
             # the claimedtype list is descending order list with more recent claimed type listed first
             # via James Gulliochon (@astrocrash) on twitter 
-            ntype = list(types)[0]
+            ntype = list(types.keys())[0]
 
             if len(types) == 1:
                 # if we have only one claimed type, then as long as it's not bad, we're done
@@ -151,7 +152,9 @@ def GProcessing():
                     # if two sources don't agree on the most recent claimed type
                     # check if three or more sources agree on the most common claimed type
                     most_claims = np.array(types.values()).argmax()
-                    nclaims = types.values()[most_claims]
+                    nclaims = list(types.values())[most_claims]
+                    print("THIS NEEDS MORE ANALYSIS!")
+                    print(nclaims)
                     if nclaims >= 3:
                         # we'll accept the most common claimed type as the type then
                         ntype   = list(types)[most_claims]
@@ -168,7 +171,7 @@ def GProcessing():
 
             obj_data[objname] = []
             obj_data[objname].append(objname)
-            for key, default_value in obj_data_keys.iteritems():
+            for key, default_value in obj_data_keys.items():
                 if key in data[objname]:
                     value = data[objname][key][0]['value']
                 else:
@@ -211,9 +214,11 @@ def GProcessing():
 
             # Do Gaussian Process Fitting right here
             try:
+                #Fix the type for each of the arrays sent to the TouchstoneObject
+                band = np.array(band)
                 tobj = TouchstoneObject(objname, time, mag, magerr, band)
-                outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=5)
-                outbspline = tobj.spline_smooth(per = False, minobs = 5, )
+                outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=10)
+                outbspline = tobj.spline_smooth(per = False, minobs = 10)
                 outjson = {}
                 for filt in outgp:
 
@@ -266,7 +271,6 @@ def GProcessing():
 
 def main():
     GProcessing()
-
 
 
 

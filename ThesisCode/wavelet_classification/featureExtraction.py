@@ -12,8 +12,7 @@ bagidis_path = './getBagidisCoeffs.R'
 
 
 def get_bagidis_coeffs(mjd, magnitude, num_coeffs=10, script_path=bagidis_path):
-    """
-    Returns the first numCoeffs BAGIDIS coeffs of a given lightcurve
+    """  Returns the first numCoeffs BAGIDIS coeffs of a given lightcurve
     mjd -- Modified Julian Date (must be a uniform grid)
     magnitude -- Corresponding magnitudes to the dates
     numCoeffs -- number of coefficients to be returned, in decreasing order of importance
@@ -30,7 +29,7 @@ def generalWaveletCoeffs(waveletType, mjd, magnitude):
 
 
 def main():
-    return 1
+    pass
 
 if __name__ == "__main__":
     sys.exit(main())

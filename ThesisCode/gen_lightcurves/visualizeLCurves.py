@@ -1,14 +1,21 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 import matplotlib.pyplot as plt
 import json
 import os
 import sys
 import numpy as np
+import random
 
 def main():
     path = "./gp_smoothed/"
+    output_lightcurves_file = 'selectedLightcurves'
+    output_lightcurves = []
 
     filenames = os.listdir(path)
+
+    #Randomize the file order to allow for fairer selection of the sub-sample
+    filenames = np.random.permutation(filenames)
+
     for filename in filenames:
         objname = filename
         with open(os.path.join(path, filename), mode='r') as f:
@@ -21,6 +28,7 @@ def main():
             old_time = data_raw[filt]["mjd"]
             old_mag = data_raw[filt]["mag"]
             old_mag_err = data_raw[filt]["dmag"]
+            bspline_mag = data_raw[filt]["bsplinemag"]
             #print("Resampled Time", time)
             #print("Old time", old_time)
             #print("Old mag", old_mag)
@@ -34,9 +42,15 @@ def main():
 
             fig = plt.figure(figsize=(10, 10))
             ax0 = fig.add_subplot(1, 1, 1)
-            ax0.plot(time, mag,'-k', label='Smoothed Data')
             ax0.errorbar(old_time, old_mag, fmt='r', yerr=old_mag_err,label='Original Data')
-            plt.show()
+            ymin, ymax = ax0.get_ylim()
+            ax0.plot(time, mag,'-k', label='Smoothed Data')
+            ax0.plot(time, bspline_mag, '-g', label='Spline Smoothed Data')
+            ax0.set_ylim(ymin, ymax)
+            plt.draw()
+            plt.pause(0.05) 
+            input("<Hit Enter To Close>")
+            plt.close()
 
         
 
