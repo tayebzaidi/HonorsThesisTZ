@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import json
 import os
 import sys
 import numpy as np
-import random
+import math
 
 def main():
     path = "./gp_smoothed/"
@@ -19,39 +20,62 @@ def main():
     for filename in filenames:
         objname = filename
         with open(os.path.join(path, filename), mode='r') as f:
-            data_raw = json.load(f)
+            file_data = json.load(f)
 
-        for filt in data_raw:
-            time = data_raw[filt]["modeldate"]
-            mag = data_raw[filt]["modelmag"]
-            mag_err = data_raw[filt]["modelerr"]
-            old_time = data_raw[filt]["mjd"]
-            old_mag = data_raw[filt]["mag"]
-            old_mag_err = data_raw[filt]["dmag"]
-            bspline_mag = data_raw[filt]["bsplinemag"]
-            #print("Resampled Time", time)
-            #print("Old time", old_time)
-            #print("Old mag", old_mag)
+
+        N = len(file_data.keys())
+        if N < 3:
+            cols = 1
+        else:
+            cols = 3
+        rows = int(math.ceil(N / cols))
+
+        gs = gridspec.GridSpec(rows, cols)
+
+        fig = plt.figure(figsize=(10, 12))
+        fig.suptitle(objname)
+
+        data = list(file_data)
+
+        for i in range(len(data)):
+            filt = data[i]
+            mjd = file_data[filt]['mjd']
+            mag = file_data[filt]['mag']
+            mag_err = file_data[filt]['dmag']
+            model_phase = file_data[filt]['modeldate']
+            model_mag = file_data[filt]['modelmag']
+            bspline_mag = file_data[filt]['bsplinemag']
+            type = file_data[filt]['type']
+
+            ax = fig.add_subplot(gs[i])
+            ax.errorbar(mjd, mag, fmt='r', yerr=mag_err,label='Original Data')
+            ymin, ymax = ax.get_ylim()
+            ax.plot(model_phase, model_mag, '-k', label='GP Smoothed Data')
+            ax.plot(model_phase, bspline_mag, '-g', label='Spline Smoothed Data')
+            ax.set_ylim(ymin, ymax)
+
 
             #Print outlier stats
-            mag_range = np.ptp(mag)
-            old_mag_range = np.ptp(old_mag)
+            mag_range = np.ptp(model_mag)
+            old_mag_range = np.ptp(mag)
             print(objname, filt)
 
-            #out_data = map(np.array,[time, mag, old_time, old_mag])
-
-            fig = plt.figure(figsize=(10, 10))
-            ax0 = fig.add_subplot(1, 1, 1)
-            ax0.errorbar(old_time, old_mag, fmt='r', yerr=old_mag_err,label='Original Data')
-            ymin, ymax = ax0.get_ylim()
-            ax0.plot(time, mag,'-k', label='Smoothed Data')
-            ax0.plot(time, bspline_mag, '-g', label='Spline Smoothed Data')
-            ax0.set_ylim(ymin, ymax)
-            plt.draw()
-            plt.pause(0.05) 
-            input("<Hit Enter To Close>")
+        plt.draw()
+        plt.pause(0.05)
+        print("Number of files currently: ", len(output_lightcurves))
+        print("Supernova Type: ", type)
+        keystroke = input("<Hit Enter To Close>")
+        if keystroke == '.':
+            output_lightcurves.append(objname)
+        elif keystroke == 'q':
+            with open(output_lightcurves_file, 'w') as out:
+                for objname in output_lightcurves:
+                    out.write(objname + '\n')
             plt.close()
+            sys.exit()
+        plt.close()
 
+    
         
 
 if __name__=="__main__":
