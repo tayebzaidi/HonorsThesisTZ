@@ -11,7 +11,7 @@ import math
 def main():
     destination_file = 'subsampleLightcurves.pdf'
 
-    filename = 'goodLightcurves'
+    filename = 'CfA_CSP_lightcurves'
     with open(filename, 'r') as f:
         lightcurves = [line.rstrip('\n') for line in f]
         lightcurves
@@ -22,6 +22,13 @@ def main():
             lightcurve_path = '../gen_lightcurves/gp_smoothed/' + lightcurve
             with open(lightcurve_path, 'r') as f:
                 file_data = json.load(f)
+
+            #Ignore all non-CSP or CfA entries
+            for k in list(file_data.keys()):
+                if not (k.endswith('CSP') or ('CfA' in k)):
+                    del file_data[k]
+            if len(file_data) == 0:
+                continue
 
             #This hack removes the '_gpsmoothed.json' from the string to return the objname
             objname = lightcurve[:-16]
@@ -73,6 +80,7 @@ def main():
                 model_mag = file_data[filt]['modelmag']
                 bspline_mag = file_data[filt]['bsplinemag']
                 goodstatus = file_data[filt]['goodstatus']
+                type = file_data[filt]['type']
 
                 ax = fig.add_subplot(gs[i])
                 ax.errorbar(mjd, mag, fmt='r', yerr=mag_err,label='Original')
@@ -84,7 +92,7 @@ def main():
                 if(not goodstatus):
                     ax.set_ylim(ymin, ymax)
 
-            fig.legend(handles, labels)
+            fig.legend(handles, labels, title=type)
             pdf.savefig()  # saves the current figure into a pdf page
     
 

@@ -79,7 +79,7 @@ def GProcessing():
         Q = nfiles
     print(procs_num, rank, nfiles, quotient, P, Q)
 
-    destination = "/home/antares/nfs_share/tzaidi/HonorsThesisTZ/ThesisCode/genLCurves/gp_smoothed/"
+    destination = "/home/antares/nfs_share/tzaidi/HonorsThesisTZ/ThesisCode/gen_lightcurves/gp_smoothed/"
     destination2 = "/mnt/data/antares/aux/sne.space/parsed/"
     dict_list = []
 
@@ -252,7 +252,8 @@ def GProcessing():
                                         'modelmag':thismod.tolist(),\
                                         'modelerr':thiserr.tolist(),\
                                         'bsplinemag':thismod_bspline.tolist(),\
-                                        'goodstatus':goodstatus}
+                                        'goodstatus':goodstatus,\
+                                        'type': ntype}
                     kernelpars.append(thisgp.kernel.pars[0])
                 if len(outjson.keys()) > 0:    
                     with open(destination + objname+'_gpsmoothed.json', mode='w') as f:
