@@ -16,7 +16,7 @@ def main():
 
     #Randomize the file order to allow for fairer selection of the sub-sample
     filenames = np.random.permutation(filenames)
-
+    
     for filename in filenames:
         objname = filename
         with open(os.path.join(path, filename), mode='r') as f:

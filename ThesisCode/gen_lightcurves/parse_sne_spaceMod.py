@@ -220,7 +220,12 @@ def GProcessing():
                 outbspline = tobj.spline_smooth(per = False, minobs = 10)
                 outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=10)
                 outjson = {}
-                for filt in outgp:
+
+                #Only loop over filters that both outgp and outbspline share
+                #print("OutGP: ", list(outgp.keys()))
+                #print("OutBspline: ", list(outbspline.keys()))
+                outfilters = list(set(outgp.keys()) & set(outbspline.keys()))
+                for filt in outfilters:
 
                     # Generate resampled values from the Gaussian Process regression
                     thisgp, thisjd, thismag, thisdmag = outgp[filt]
@@ -232,6 +237,22 @@ def GProcessing():
                     # Generate resampled values from the spline model
                     thisbspline = outbspline[filt]
                     thismod_bspline = scinterp.splev(mod_dates, thisbspline)
+                    orig_val_bspline = scinterp.splev(thisjd, thisbspline)
+
+                    #This is inefficient, but will allow me to subtract the bspline
+                    # before re-running the gaussian process regression
+                    temp_passband = np.array([filt] * len(thisjd))
+                    mag_subtracted = thismag - orig_val_bspline
+                    print("Mag sub: ", mag_subtracted)
+                    tobj_subtracted = TouchstoneObject(objname, thisjd, mag_subtracted, thisdmag, temp_passband)
+                    outgp_subtracted = tobj_subtracted.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=10)
+                    #Since I only gave it values for a single filter, the output will only have one filter in the dictionary
+                    thisgp_subtracted, _, thismag_subtracted, _ = outgp_subtracted[filt]
+                    thismod_subtracted, modcovar_subtracted = thisgp_subtracted.predict(thismag_subtracted, mod_dates)
+                    thiserr_subtracted = np.sqrt(np.diag(modcovar_subtracted))
+
+                    #Re-add back in the b-spline values for the magnitude
+                    thismod_subtracted = thismod_subtracted + thismod_bspline
 
                     goodstatus = True
 
@@ -251,11 +272,12 @@ def GProcessing():
                                         'modeldate':mod_dates.tolist(),\
                                         'modelmag':thismod.tolist(),\
                                         'modelerr':thiserr.tolist(),\
+                                        'modelmag_sub':thismod_subtracted.tolist(),\
                                         'bsplinemag':thismod_bspline.tolist(),\
                                         'goodstatus':goodstatus,\
                                         'type': ntype}
                     kernelpars.append(thisgp.kernel.pars[0])
-                if len(outjson.keys()) > 0:    
+                if len(outjson.keys()) > 0:
                     with open(destination + objname+'_gpsmoothed.json', mode='w') as f:
                         json.dump(outjson, f, indent=2, sort_keys=True)
         

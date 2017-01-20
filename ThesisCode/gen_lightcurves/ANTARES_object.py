@@ -305,7 +305,11 @@ class TouchstoneObject:
         for i in range(len(filters)):
             pb = filters[i]
             mask = (self.passband == pb)
+            #print("Passband: ", self.passband)
+            #print("PB: ", pb)
+            #print(mask)
             nobs = len(phase[mask])
+            print("Number of obs in {}: {}".format(pb, nobs))
             if nobs < minobs:
                 continue #I guess we could do linear interpolation or something here, but that seems useless.
             
@@ -418,7 +422,6 @@ class TouchstoneObject:
 
 
         outticks = np.arange(0.05, 1., 0.15)
-        w = 1./self.mag_err
         filters = self.filters
         phase = self.get_phase(per=per, phase_offset=phase_offset)
         if phase is None:
@@ -429,6 +432,7 @@ class TouchstoneObject:
             nobs = len(phase[mask])
             if nobs < minobs:
                 print("Not enough observations in {}".format(pb))
+                print("Fails on original with {} points".format(nobs))
                 continue
             m2 = phase[mask].argsort()
             minphase = phase[mask][m2].min()
@@ -490,7 +494,10 @@ class TouchstoneObject:
             nobs = len(phase_spline)
             if nobs < minobs:
                 print("Not enough observations in {}".format(pb))
+                print("Fails after duplicate removal with {} points".format(nobs))
                 continue
+            print(phase_spline)
+            print(mag_err)
             tck = scinterp.splrep(phase_spline, mag,\
                      w=1./mag_err,\
                      k=3, per=per)
