@@ -14,7 +14,6 @@ def main():
     filename = 'CfA_CSP_lightcurves'
     with open(filename, 'r') as f:
         lightcurves = [line.rstrip('\n') for line in f]
-        lightcurves
 
     with PdfPages(destination_file) as pdf:
 
@@ -42,7 +41,9 @@ def main():
             rows = int(math.ceil(N / cols))
 
             #To ensure that plot text fits without overlay
-            #Change font size to fit the text, taken from http://stackoverflow.com/questions/3899980/how-to-change-the-font-size-on-a-matplotlib-plot answer by Pedro M. Duarte
+            #Change font size to fit the text, taken from \
+            #http://stackoverflow.com/questions/3899980/how-to-change-the-font-size-on-a-matplotlib-plot\
+            # answer by Pedro M. Duarte
             SIZE = 5
             MEDIUM_SIZE = 8
             BIGGER_SIZE = 10
@@ -91,6 +92,8 @@ def main():
                 handles, labels = ax.get_legend_handles_labels()
                 if(not goodstatus):
                     ax.set_ylim(ymin, ymax)
+                ax.invert_yaxis()
+
 
             fig.legend(handles, labels, title=type)
             pdf.savefig()  # saves the current figure into a pdf page

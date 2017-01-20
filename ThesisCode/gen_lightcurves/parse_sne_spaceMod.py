@@ -217,8 +217,8 @@ def GProcessing():
                 #Fix the type for each of the arrays sent to the TouchstoneObject
                 band = np.array(band)
                 tobj = TouchstoneObject(objname, time, mag, magerr, band)
-                outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=10)
                 outbspline = tobj.spline_smooth(per = False, minobs = 10)
+                outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=10)
                 outjson = {}
                 for filt in outgp:
 

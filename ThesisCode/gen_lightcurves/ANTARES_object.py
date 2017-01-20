@@ -427,7 +427,6 @@ class TouchstoneObject:
             pb = filters[i]
             mask = (self.passband == pb)
             nobs = len(phase[mask])
-            print(nobs)
             if nobs < minobs:
                 print("Not enough observations in {}".format(pb))
                 continue
@@ -487,6 +486,11 @@ class TouchstoneObject:
             #print("Error", mag_err)
             #print(np.diff(phase_spline))
             #print(any(np.diff(phase_spline) <= 0))
+
+            nobs = len(phase_spline)
+            if nobs < minobs:
+                print("Not enough observations in {}".format(pb))
+                continue
             tck = scinterp.splrep(phase_spline, mag,\
                      w=1./mag_err,\
                      k=3, per=per)
