@@ -3,8 +3,8 @@
 import sys
 import json
 import featureExtraction
-import matplotlib.pyplot as plt
-from matplotlib import cm
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 
 def main():
 
@@ -13,6 +13,7 @@ def main():
         lightcurves = [line.rstrip('\n') for line in f]
 
     wavelet_coeffs = {}
+    stypes = []
     i = 1
     for lightcurve in lightcurves:
         i += 1
@@ -43,46 +44,66 @@ def main():
         goodstatus = file_data[filt]['goodstatus']
         stype = file_data[filt]['type']
 
-        raw_coeffs = featureExtraction.general_wavelet_coeffs('bagidis', model_phase, bspline_mag)
-        wavelet_coeffs[objname]['coeffs'] = list(map(float, raw_coeffs.split()))
+        num_coeffs = 10
+        raw_coeffs = featureExtraction.general_wavelet_coeffs('bagidis', model_phase,\
+                                                             bspline_mag, num_coeffs=num_coeffs)
+        wavelet_coeffs[objname]['coeffs'] = raw_coeffs
         wavelet_coeffs[objname]['type'] = stype
+        stypes.append(stype)
         print(i)
         #if i > 8:
         #    break
 
-    print(wavelet_coeffs)
-    fig = plt.figure(figsize=(10, 10))
-    feature1 = []
-    feature2 = []
-    feature3 = []
-    feature4 = []
-    type = []
-    print(list(wavelet_coeffs.keys()))
+
+    test_train_data = np.zeros((len(list(wavelet_coeffs)), num_coeffs+1))
+    i = 0
     for obj in wavelet_coeffs:
-        feature1.append(wavelet_coeffs[obj]['coeffs'][0])
-        feature2.append(wavelet_coeffs[obj]['coeffs'][1])
-        feature3.append(wavelet_coeffs[obj]['coeffs'][2])
-        feature4.append(wavelet_coeffs[obj]['coeffs'][3])
-        type.append(wavelet_coeffs[obj]['type'])
-        print(wavelet_coeffs[obj]['type'])
+        print(len(wavelet_coeffs[obj]['coeffs']))
+        test_train_data[i,0:num_coeffs] = wavelet_coeffs[obj]['coeffs']
 
-    type = list(map(hash, type))
-    ax1 = fig.add_subplot(2,2,1)
-    ax2 = fig.add_subplot(2,2,2)
-    ax3 = fig.add_subplot(2,2,3)
-    ax4 = fig.add_subplot(2,2,4)
-    ax1.scatter(feature1, feature2, c=type, cmap=cm.jet, marker='o')
-    ax1.set_title('1 vs 2')
-    ax2.scatter(feature2, feature3, c=type, cmap=cm.jet, marker='o')
-    ax2.set_title('2 vs 3')
-    ax3.scatter(feature1, feature3, c=type, cmap=cm.jet, marker='o')
-    ax3.set_title('1 vs 3')
-    ax4.scatter(feature2, feature4, c=type, cmap=cm.jet, marker='o')
-    ax4.set_title('2 vs 4')
-    plt.show()
+        #Assign types and print out the resulting table
+        # For now, type Ia -- 0
+        # all else --> 1
+        if wavelet_coeffs[obj]['type'] == 'Ia':
+            test_train_data[i,num_coeffs] = 0
+        else:
+            test_train_data[i,num_coeffs] = 1
+        i += 1
 
-    with open('waveletcoeffs.json', 'w') as out:
-        json.dump(wavelet_coeffs, out)
+    #Split the data into test and train data
+    #First randomize the object order to eliminate bias towards stype
+    # and set the seed value to ensure repeatability
+    np.random.seed(40)
+    test_train_data = np.random.permutation(test_train_data)
+
+    #Set proportions to be used for test/train/validation
+    train_prop = 0.7
+    test_prop = 1 - train_prop
+
+    #Use the proportions to calculate row indices
+    split_idx = int(test_train_data.shape[0] * train_prop)
+
+    train = test_train_data[0:split_idx,:]
+    test = test_train_data[split_idx:,:]
+
+    print(train.shape)
+    print(test.shape)
+    print(train[:,num_coeffs].shape)
+
+    #Setup the Random Forest Classifier
+    forest = RandomForestClassifier(n_estimators = 100)
+
+    forest.fit(train[:,0:num_coeffs], train[:,num_coeffs])
+
+    output = forest.predict(test[:,0:num_coeffs])
+
+    print("Random Forest Regression: ", output)
+    print(np.sum(output == test[:,num_coeffs]))
+
+
+
+    #with open('waveletcoeffs.json', 'w') as out:
+    #    json.dump(wavelet_coeffs, out)
 
 
 if __name__ == "__main__":

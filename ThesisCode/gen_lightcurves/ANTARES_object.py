@@ -449,7 +449,19 @@ class TouchstoneObject:
             mono_bool = np.any(np.diff(phase[mask][m2]) == 0)
 
             mag = self.mag
-            mag_err = self.mag_err
+            mag_err = np.array(self.mag_err)
+
+            #Correct any potentially zero mag_err values
+            # and replace them with the median value of the non-zero entries
+            #print(mag_err)
+            if np.any(mag_err == 0):
+                mag_err_check = np.ma.array(mag_err, mask = False)
+                zero_idxs = np.where(mag_err_check == 0)
+                mag_err_check.mask[zero_idxs] = True
+                non_zero_median = np.median(mag_err_check)
+                mag_err_check[zero_idxs] = non_zero_median
+                mag_err = np.array(mag_err_check)
+            #print(mag_err)
 
             #Fix repeated values
             if(mono_bool):
@@ -483,6 +495,8 @@ class TouchstoneObject:
                 phase_spline = phase[mask][m2]
 
             #Debug printing
+            #print("Filter: ",pb)
+            #print("Weights: ",1./mag_err)
             #print("Used knots", useticks)
             #print("Original Phase", phase[mask][m2])
             #print("Phase", phase_spline)
@@ -496,8 +510,7 @@ class TouchstoneObject:
                 print("Not enough observations in {}".format(pb))
                 print("Fails after duplicate removal with {} points".format(nobs))
                 continue
-            print(phase_spline)
-            print(mag_err)
+
             tck = scinterp.splrep(phase_spline, mag,\
                      w=1./mag_err,\
                      k=3, per=per)

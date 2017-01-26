@@ -237,13 +237,15 @@ def GProcessing():
                     # Generate resampled values from the spline model
                     thisbspline = outbspline[filt]
                     thismod_bspline = scinterp.splev(mod_dates, thisbspline)
+                    #print(thismod_bspline)
                     orig_val_bspline = scinterp.splev(thisjd, thisbspline)
 
                     #This is inefficient, but will allow me to subtract the bspline
                     # before re-running the gaussian process regression
                     temp_passband = np.array([filt] * len(thisjd))
                     mag_subtracted = thismag - orig_val_bspline
-                    print("Mag sub: ", mag_subtracted)
+                    #print("Orig_val_bspline: ", orig_val_bspline)
+                    #print("Mag sub: ", mag_subtracted)
                     tobj_subtracted = TouchstoneObject(objname, thisjd, mag_subtracted, thisdmag, temp_passband)
                     outgp_subtracted = tobj_subtracted.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=10)
                     #Since I only gave it values for a single filter, the output will only have one filter in the dictionary
