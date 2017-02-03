@@ -23,9 +23,9 @@ def main():
             file_data = json.load(f)
 
         #Ignore all non-CSP or CfA entries
-        for k in list(file_data.keys()):
-            if not (k.endswith('CSP') or ('CfA' in k)):
-                del file_data[k]
+        #for k in list(file_data.keys()):
+        #    if not (k.endswith('CSP') or ('CfA' in k)):
+        #        del file_data[k]
         if len(file_data) == 0:
             continue
 
@@ -38,8 +38,8 @@ def main():
 
         gs = gridspec.GridSpec(rows, cols)
 
-        #fig = plt.figure(figsize=(10, 12))
-        #fig.suptitle(objname)
+        fig = plt.figure(figsize=(10, 12))
+        fig.suptitle(objname)
 
 
 
@@ -51,14 +51,16 @@ def main():
             model_phase = file_data[filt]['modeldate']
             model_mag = file_data[filt]['modelmag']
             bspline_mag = file_data[filt]['bsplinemag']
+            modelmag_sub = file_data[filt]['modelmag_sub']
             type = file_data[filt]['type']
 
-            #ax = fig.add_subplot(gs[i])
-            #ax.errorbar(mjd, mag, fmt='r', yerr=mag_err,label='Original Data')
-            #ymin, ymax = ax.get_ylim()
+            ax = fig.add_subplot(gs[i])
+            ax.errorbar(mjd, mag, fmt='r', yerr=mag_err,label='Original Data')
+            ymin, ymax = ax.get_ylim()
             #ax.plot(model_phase, model_mag, '-k', label='GP Smoothed Data')
-            #ax.plot(model_phase, bspline_mag, '-g', label='Spline Smoothed Data')
-            #ax.set_ylim(ymin, ymax)
+            ax.plot(model_phase, bspline_mag, '-g', label='Spline Smoothed Data')
+            ax.plot(model_phase, modelmag_sub, '-k', label='GP/Bspline subtracted', linewidth=1.5)
+            ax.set_ylim(ymin, ymax)
 
 
             #Print outlier stats
@@ -66,12 +68,12 @@ def main():
             old_mag_range = np.ptp(mag)
             print(objname, filt)
         
-        #plt.draw()
-        #plt.pause(0.05)
+        plt.draw()
+        plt.pause(0.05)
         print("Number of files currently: ", len(output_lightcurves))
         print("Supernova Type: ", type)
-        #keystroke = input("<Hit Enter To Close>")
-        keystroke = '.'
+        keystroke = input("<Hit Enter To Close>")
+        #keystroke = '.'
         if keystroke == '.':
             output_lightcurves.append(objname)
         elif keystroke == 'q':
@@ -84,7 +86,7 @@ def main():
     with open(output_lightcurves_file, 'w') as out:
             for objname in output_lightcurves:
                 out.write(objname + '\n')
-    
+
         
 
 if __name__=="__main__":

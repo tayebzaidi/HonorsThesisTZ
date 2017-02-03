@@ -4,6 +4,7 @@ import sys
 import json
 import numpy as np
 import rpy2
+import pywt
 from rpy2.robjects.packages import importr
 
 def get_bagidis_coeffs(mjd, magnitude, num_coeffs=10):
@@ -16,10 +17,13 @@ def get_bagidis_coeffs(mjd, magnitude, num_coeffs=10):
     bagidis = importr('Bagidis')
     magnitude = rpy2.robjects.FloatVector(magnitude)
     bagidis_lcurve = bagidis.BUUHWE(magnitude)
-    bagidis_coeffs = bagidis_lcurve.rx2('detail')[0:num_coeffs]
+    bagidis_coeffs = bagidis_lcurve.rx2('detail')[1:(num_coeffs+1)]
     bagidis_coeffs = np.array(bagidis_coeffs)
 
     return bagidis_coeffs
+
+def get_db1_coeffs(mjd, magnitude, num_coeffs=10):
+    pass
 
 def general_wavelet_coeffs(wavelet_type, mjd, magnitude, num_coeffs=10):
     """  Returns the wavelet decomposition for given types of wavelets
@@ -30,6 +34,10 @@ def general_wavelet_coeffs(wavelet_type, mjd, magnitude, num_coeffs=10):
     """
     if wavelet_type == 'bagidis':
         return get_bagidis_coeffs(mjd, magnitude, num_coeffs)
+    elif wavelet_type == 'db1':
+        return get_db1_coeffs(mjd, magnitude, num_coeffs)
+    else:
+        pass
 
 
 def main():

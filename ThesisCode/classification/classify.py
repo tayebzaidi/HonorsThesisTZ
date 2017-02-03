@@ -5,6 +5,8 @@ import json
 import featureExtraction
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
 
 def main():
 
@@ -73,32 +75,33 @@ def main():
     #Split the data into test and train data
     #First randomize the object order to eliminate bias towards stype
     # and set the seed value to ensure repeatability
-    np.random.seed(40)
-    test_train_data = np.random.permutation(test_train_data)
+    #np.random.seed(40)
+    #test_train_data = np.random.permutation(test_train_data)
 
     #Set proportions to be used for test/train/validation
-    train_prop = 0.7
-    test_prop = 1 - train_prop
+    #train_prop = 0.7
+    #test_prop = 1 - train_prop
 
     #Use the proportions to calculate row indices
-    split_idx = int(test_train_data.shape[0] * train_prop)
+    #split_idx = int(test_train_data.shape[0] * train_prop)
 
-    train = test_train_data[0:split_idx,:]
-    test = test_train_data[split_idx:,:]
+    #train = test_train_data[0:split_idx,:]
+    #test = test_train_data[split_idx:,:]
 
-    print(train.shape)
-    print(test.shape)
-    print(train[:,num_coeffs].shape)
+    #print(train.shape)
+    #print(test.shape)
+    #print(train[:,num_coeffs].shape)
 
     #Setup the Random Forest Classifier
     forest = RandomForestClassifier(n_estimators = 100)
 
-    forest.fit(train[:,0:num_coeffs], train[:,num_coeffs])
+    scores = cross_val_score(forest, test_train_data[:, 0:num_coeffs], test_train_data[:,num_coeffs], cv=5)
+    #forest.fit(train[:,0:num_coeffs], train[:,num_coeffs])
 
-    output = forest.predict(test[:,0:num_coeffs])
+    #output = forest.predict(test[:,0:num_coeffs])
 
-    print("Random Forest Regression: ", output)
-    print(np.sum(output == test[:,num_coeffs]))
+    print("Random Forest Regression: ", scores)
+    #print(np.sum(output == test[:,num_coeffs]))
 
 
 
