@@ -8,7 +8,7 @@ import numpy as np
 import math
 
 def main():
-    path = "./gp_smoothed/"
+    path = "./gp_smoothed_periodic/"
     output_lightcurves_file = 'selectedLightcurves'
     output_lightcurves = []
 
@@ -50,16 +50,16 @@ def main():
             mag_err = file_data[filt]['dmag']
             model_phase = file_data[filt]['modeldate']
             model_mag = file_data[filt]['modelmag']
-            bspline_mag = file_data[filt]['bsplinemag']
-            modelmag_sub = file_data[filt]['modelmag_sub']
+            #bspline_mag = file_data[filt]['bsplinemag']
+            #modelmag_sub = file_data[filt]['modelmag_sub']
             type = file_data[filt]['type']
 
             ax = fig.add_subplot(gs[i])
-            ax.errorbar(mjd, mag, fmt='r', yerr=mag_err,label='Original Data')
+            ax.errorbar(mjd, mag, fmt='r', yerr=mag_err,label='Original Data', alpha=0.7)
             ymin, ymax = ax.get_ylim()
-            #ax.plot(model_phase, model_mag, '-k', label='GP Smoothed Data')
-            ax.plot(model_phase, bspline_mag, '-g', label='Spline Smoothed Data')
-            ax.plot(model_phase, modelmag_sub, '-k', label='GP/Bspline subtracted', linewidth=1.5)
+            ax.plot(model_phase, model_mag, '-k', label='GP Smoothed Data')
+            #ax.plot(model_phase, bspline_mag, '-g', label='Spline Smoothed Data')
+            #ax.plot(model_phase, modelmag_sub, '-k', label='GP/Bspline subtracted', linewidth=1.5)
             ax.set_ylim(ymin, ymax)
 
 
@@ -67,7 +67,7 @@ def main():
             mag_range = np.ptp(model_mag)
             old_mag_range = np.ptp(mag)
             print(objname, filt)
-        
+
         plt.draw()
         plt.pause(0.05)
         print("Number of files currently: ", len(output_lightcurves))

@@ -90,7 +90,7 @@ class TouchstoneObject:
         self.time    = np.array(time).astype('f')
         self.mag     = np.array(mag).astype('f')
         self.mag_err = np.array(mag_err).astype('f')
-        self.passband= passband
+        self.passband= np.array(passband)
         self.filters = np.unique(passband)
         self.per     = per
         self.best_period = None
@@ -326,7 +326,8 @@ class TouchstoneObject:
                 #thismag    = np.hstack((thismag, thismag, thismag))
                 #thismag_err= np.hstack((thismag_err, thismag_err, thismag_err))
 
-                kernel = kernels.ExpSine2Kernel(0.5, 1.0)
+                #Latest modification from 0.5 to 0.8 in current state
+                kernel = kernels.ExpSine2Kernel(1.4, 1.0)
             else:
                 kernel = kernels.ExpSquaredKernel(100.) * kernels.DotProductKernel()
     

@@ -1,0 +1,8 @@
+with open('SN2005el_gpsmoothed.json', 'r') as f:
+    file_data = json.load(f)
+
+modelmag = file_data['g__CSP']['modelmag']
+modelphase = file_data['g__CSP']['modeldate']
+mag = file_data['g__CSP']['mag']
+phase = file_data['g__CSP]['mjd']
+

@@ -17,7 +17,7 @@ def get_bagidis_coeffs(mjd, magnitude, num_coeffs=10):
     bagidis = importr('Bagidis')
     magnitude = rpy2.robjects.FloatVector(magnitude)
     bagidis_lcurve = bagidis.BUUHWE(magnitude)
-    bagidis_coeffs = bagidis_lcurve.rx2('detail')[1:(num_coeffs+1)]
+    bagidis_coeffs = bagidis_lcurve.rx2('detail')[0:num_coeffs]
     bagidis_coeffs = np.array(bagidis_coeffs)
 
     return bagidis_coeffs

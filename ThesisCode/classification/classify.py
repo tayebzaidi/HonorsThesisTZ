@@ -98,12 +98,13 @@ def main():
     scores = cross_val_score(forest, test_train_data[:, 0:num_coeffs], test_train_data[:,num_coeffs], cv=5)
     #forest.fit(train[:,0:num_coeffs], train[:,num_coeffs])
 
-    #output = forest.predict(test[:,0:num_coeffs])
+    #output = forest.predict_proba(test[:,0:num_coeffs])
+    #class_output = forest.predict(test[:,0:num_coeffs])
 
     print("Random Forest Regression: ", scores)
     #print(np.sum(output == test[:,num_coeffs]))
-
-
+    #print(output)
+    #print(class_output)
 
     #with open('waveletcoeffs.json', 'w') as out:
     #    json.dump(wavelet_coeffs, out)
