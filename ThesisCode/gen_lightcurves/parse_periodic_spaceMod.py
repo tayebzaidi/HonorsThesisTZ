@@ -100,6 +100,7 @@ def periodicProcessing():
         # I may need to mess around more with the parameters to get smooth curves
         outgp = tobj.gaussian_process_alt_smooth(per=True, scalemin=np.log(25.),
                                                  scalemax=np.log(5000.), minobs=10)
+        #outbspline = tobj.spline_smooth(per=True, minobs=15)
         outjson = {}
 
         for filt in outgp:
