@@ -326,10 +326,11 @@ class TouchstoneObject:
                 #thismag    = np.hstack((thismag, thismag, thismag))
                 #thismag_err= np.hstack((thismag_err, thismag_err, thismag_err))
 
-                #Latest modification from 0.5 to 0.8 in current state
+                #Latest modification from 0.5 to 1.4 in current state
                 kernel = kernels.ExpSine2Kernel(1.4, 1.0)
             else:
-                kernel = kernels.ExpSquaredKernel(100.) * kernels.DotProductKernel()
+                #Latest modification from 100. to 500. 
+                kernel = kernels.ExpSquaredKernel(500.) * kernels.DotProductKernel()
     
             gp = george.GP(kernel, mean=thismag.mean())    
             def nll(p):

@@ -6,12 +6,27 @@ import os
 def remapBands(lightcurve, z=0):
     """
     Remaps the bands of a given lightcurve file to the "grizy" of the DES survey
-    There are two stages:
+    Stages:
         Assess which band the given band most clearly falls under
         E.g. map g_Catalina_Schmidt --> g
 
         Given a redshift z, adjust the band to be in the restframe
         If no redshift is given, skip this stage (or in this case, divide by 1)
+
+        If there are multiple bands that would be overwritten, pick the best survey source
+        Survey Source Priority List (descending order):
+            CfA4/3
+            CSP
+            Kait3
+            PAIRITEL
+            LT_AB
+            CTIO
+            Landolt
+            PS1_AB
+            SDSS
+            Palomar
+            Vega
+            C_Catalina_Schmidt
 
     This code is based off of Gautham Narayan's "bestrest.pro" function
 
@@ -25,6 +40,10 @@ def remapBands(lightcurve, z=0):
 
     #Initialize the lightcurve object to be returned
     lightcurve_mapped = {}
+
+    #Set up boolean for multiple overwrites for a single band
+    repeat = False
+    saved_passbands = []
 
     redshift = 1.0 + z
 
@@ -41,6 +60,9 @@ def remapBands(lightcurve, z=0):
                 if passband_mapped != passband:
                     #print("Passband {} changed to {}".format(passband, passband_mapped))
                     pass
+
+    for mapped_passbands in saved_passbands:
+        lightcurve_mapped[mapped_passbands['mapped']] = lightcurve[mapped_passbands['original']]
 
     return lightcurve_mapped
 
