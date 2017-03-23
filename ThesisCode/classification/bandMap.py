@@ -13,22 +13,18 @@ def remapBands(lightcurve, z=0):
         Given a redshift z, adjust the band to be in the restframe
         If no redshift is given, skip this stage (or in this case, divide by 1)
 
-        If there are multiple bands that would be overwritten, pick the best survey source
-        Survey Source Priority List (descending order):
-            CfA4/3
-            CSP
-            Kait3
-            PAIRITEL
-            LT_AB
-            CTIO
-            Landolt
-            PS1_AB
-            SDSS
-            Palomar
-            Vega
-            C_Catalina_Schmidt
-
     This code is based off of Gautham Narayan's "bestrest.pro" function
+
+    Passband choice order (descending):
+        CfA
+        CSP
+        Kait3
+        SDSS
+        Standard
+
+    Passbands to ignore
+        Catalina Schmidt
+        (No survey listed)
 
     Inputs:
         lightcurve: A lightcurve dictionary that uses the standard setup, defined elsewhere
@@ -37,32 +33,57 @@ def remapBands(lightcurve, z=0):
     Output:
         lightcurve_mapped: Lightcurve dictionary that has been remapped
     """
-
     #Initialize the lightcurve object to be returned
     lightcurve_mapped = {}
 
-    #Set up boolean for multiple overwrites for a single band
-    repeat = False
-    saved_passbands = []
+    repeat_passbands = {'u':0, 'g':0, 'r':0, 'i':0, 'z':0, 'Y':0}
+    passband_options = {'u':[], 'g':[], 'r':[], 'i':[], 'z':[], 'Y':[]}
+    surveys_ranked = ['cfa', 'csp', 'kait', 'swift', 'vega', 'pairitel',
+                      'sdss', 'landolt', 'standard']
 
     redshift = 1.0 + z
 
     for passband in lightcurve.keys():
+
         passband_lambda = get_passband_lambda(passband)
 
-        if passband_lambda != None:
+        if passband_lambda is None:
+            continue
 
-            eff_lambda = passband_lambda/redshift
-            passband_mapped = get_passband(eff_lambda)
+        eff_lambda = passband_lambda/redshift
+        passband_mapped = get_passband(eff_lambda)
 
-            if passband_mapped != None:
-                lightcurve_mapped[passband_mapped] = lightcurve[passband]
-                if passband_mapped != passband:
-                    #print("Passband {} changed to {}".format(passband, passband_mapped))
-                    pass
+        if passband_mapped is None:
+            continue
 
-    for mapped_passbands in saved_passbands:
-        lightcurve_mapped[mapped_passbands['mapped']] = lightcurve[mapped_passbands['original']]
+        #if passband_mapped != passband:
+        #    print("Passband {} changed to {}".format(passband, passband_mapped))
+
+        #Add to passband to see if there is repetition later
+        repeat_passbands[passband_mapped] += 1
+        #Store the options for the future passband
+        passband_options[passband_mapped] += [passband]
+    #print(passband_options)
+
+
+    for passband_mapped in passband_options:
+        if repeat_passbands[passband_mapped] == 0:
+            continue
+
+        found_mapping = False
+        for survey in surveys_ranked:
+            for original_passband in passband_options[passband_mapped]:
+
+                if survey in original_passband.lower():
+                    found_mapping = True
+                    lightcurve_mapped[passband_mapped] = lightcurve[original_passband]
+                    #print("Survey {} chose, Passband {} changed to {}".format(survey, original_passband, passband_mapped))
+                    if found_mapping:
+                        break
+            if found_mapping:
+                break
+            
+
 
     return lightcurve_mapped
 

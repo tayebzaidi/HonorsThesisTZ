@@ -218,7 +218,7 @@ def GProcessing():
                 band = np.array(band)
                 tobj = TouchstoneObject(objname, time, mag, magerr, band)
                 outbspline = tobj.spline_smooth(per = False, minobs = 10)
-                outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=10)
+                outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=10)
                 outjson = {}
 
                 #Only loop over filters that both outgp and outbspline share

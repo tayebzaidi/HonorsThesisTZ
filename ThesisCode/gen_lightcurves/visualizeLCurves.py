@@ -16,6 +16,7 @@ def main():
 
     #Randomize the file order to allow for fairer selection of the sub-sample
     filenames = np.random.permutation(filenames)
+    num_files = len(filenames)
     j = 0
 
     for filename in filenames:
@@ -75,7 +76,7 @@ def main():
         print("Number of files currently: ", len(output_lightcurves))
         print("Supernova Type: ", type)
         #keystroke = input("<Hit Enter To Close>")
-        if j>200:
+        if j>2:
             keystroke = 'q'
         else:
             print(i)

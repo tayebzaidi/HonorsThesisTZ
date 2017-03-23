@@ -330,8 +330,9 @@ class TouchstoneObject:
                 kernel = kernels.ExpSine2Kernel(1.4, 1.0)
             else:
                 #Latest modification from 100. to 500. 
-                kernel = kernels.ExpSquaredKernel(500.) * kernels.DotProductKernel()
-    
+                #kernel = kernels.ExpSquaredKernel(500.) * kernels.DotProductKernel()
+                kernel = kernels.ConstantKernel(50.) * kernels.Matern52Kernel(50.) * kernels.DotProductKernel()
+
             gp = george.GP(kernel, mean=thismag.mean())    
             def nll(p):
                 gp.kernel[:] = p
@@ -347,7 +348,7 @@ class TouchstoneObject:
             if per:
                 results = op.minimize(nll, p0, jac=grad_nll, bounds=[(scalemin,scalemax),(0.,0.)])
             else:
-                results = op.minimize(nll, p0, jac=grad_nll, bounds=[(scalemin,scalemax)])
+                results = op.minimize(nll, p0, jac=grad_nll, bounds=[(scalemin, scalemax)]*len(kernel))
             gp.kernel[:] = results.x    
             # george is a little different than sklearn in that the prediction stage needs the input data
             outgp[pb] = (gp, thisphase, thismag, thismag_err)

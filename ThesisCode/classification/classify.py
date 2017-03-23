@@ -27,7 +27,7 @@ def main():
 
     filename = '../gen_lightcurves/CfA_CSP_lightcurves'
     with open(filename, 'r') as f:
-        #FIX THIS LATER
+        #FIX THIS HACK LATER
         SNe_lightcurves = [line[:-17] + '_gpsmoothed.json' for line in f]
 
     wavelet_coeffs = {}
@@ -123,8 +123,8 @@ def main():
             test_train_data[i, num_coeffs] = 2
 
 
-    print([wavelet_coeffs[obj]['type'] for obj in wavelet_coeffs])
-    print(test_train_data[:, num_coeffs])
+    #print([wavelet_coeffs[obj]['type'] for obj in wavelet_coeffs])
+    #print(test_train_data[:, num_coeffs])
 
     #Split the data into test and train data
     #First randomize the object order to eliminate bias towards object_type
