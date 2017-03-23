@@ -19,7 +19,11 @@ def remapBands(lightcurve, z=0):
         CfA
         CSP
         Kait3
+        Swift
+        Vega
+        Pairitel
         SDSS
+        Landolt
         Standard
 
     Passbands to ignore
@@ -77,12 +81,12 @@ def remapBands(lightcurve, z=0):
                 if survey in original_passband.lower():
                     found_mapping = True
                     lightcurve_mapped[passband_mapped] = lightcurve[original_passband]
+                    lightcurve_mapped[passband_mapped]['mapping'] = '{} to {}'.format(original_passband, passband_mapped)
                     #print("Survey {} chose, Passband {} changed to {}".format(survey, original_passband, passband_mapped))
                     if found_mapping:
                         break
             if found_mapping:
                 break
-            
 
 
     return lightcurve_mapped

@@ -2,6 +2,7 @@
 import sys
 #sys.path.append('/data/antares/aux')
 sys.path.append('/mnt/data/antares/aux/sne.space/')
+sys.path.append('/home/antares/nfs_share/tzaidi/HonorsThesisTZ/ThesisCode/classification/')
 import os
 import glob
 import json
@@ -14,6 +15,7 @@ from ANTARES_object import TouchstoneObject
 import scipy.interpolate as scinterp
 from mpi4py import MPI
 import pickle
+import bandMap
 
 
 # since the claimedtype in the sne.space data is ordered by time (newest claimedtype first)
@@ -225,6 +227,9 @@ def GProcessing():
                 #print("OutGP: ", list(outgp.keys()))
                 #print("OutBspline: ", list(outbspline.keys()))
                 outfilters = list(set(outgp.keys()) & set(outbspline.keys()))
+
+                #Should I do bandMapping right here and head off all future difficulties?
+
                 for filt in outfilters:
 
                     # Generate resampled values from the Gaussian Process regression
@@ -247,7 +252,7 @@ def GProcessing():
                     #print("Orig_val_bspline: ", orig_val_bspline)
                     #print("Mag sub: ", mag_subtracted)
                     tobj_subtracted = TouchstoneObject(objname, thisjd, mag_subtracted, thisdmag, temp_passband)
-                    outgp_subtracted = tobj_subtracted.gaussian_process_alt_smooth(per = False, scalemin=np.log(25.), scalemax=np.log(5000.), minobs=10)
+                    outgp_subtracted = tobj_subtracted.gaussian_process_alt_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=10)
                     #Since I only gave it values for a single filter, the output will only have one filter in the dictionary
                     thisgp_subtracted, _, thismag_subtracted, _ = outgp_subtracted[filt]
                     thismod_subtracted, modcovar_subtracted = thisgp_subtracted.predict(thismag_subtracted, mod_dates)
@@ -279,9 +284,10 @@ def GProcessing():
                                         'goodstatus':goodstatus,\
                                         'type': ntype}
                     kernelpars.append(thisgp.kernel.pars[0])
-                if len(outjson.keys()) > 0:
+                outjson_mapped = bandMap.remapBands(outjson)
+                if len(outjson_mapped.keys()) > 0:
                     with open(destination + objname+'_gpsmoothed.json', mode='w') as f:
-                        json.dump(outjson, f, indent=2, sort_keys=True)
+                        json.dump(outjson_mapped, f, indent=2, sort_keys=True)
         
             except np.linalg.linalg.LinAlgError as e:
                 print(e)
