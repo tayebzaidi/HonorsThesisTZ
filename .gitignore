@@ -3,3 +3,4 @@ ThesisCode/snova_analysis/
 ThesisCode/snmachine/
 ThesisCode/gen_lightcurves/gp_smoothed*
 __pycache__
+ThesisCode/DES_Pipeline/gen_lightcurves/DES_lcurves/*

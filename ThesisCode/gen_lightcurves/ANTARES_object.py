@@ -309,7 +309,7 @@ class TouchstoneObject:
             #print("PB: ", pb)
             #print(mask)
             nobs = len(phase[mask])
-            print("Number of obs in {}: {}".format(pb, nobs))
+            #print("Number of obs in {}: {}".format(pb, nobs))
             if nobs < minobs:
                 continue #I guess we could do linear interpolation or something here, but that seems useless.
             
@@ -434,8 +434,8 @@ class TouchstoneObject:
             mask = (self.passband == pb)
             nobs = len(phase[mask])
             if nobs < minobs:
-                print("Not enough observations in {}".format(pb))
-                print("Fails on original with {} points".format(nobs))
+                #print("Not enough observations in {}".format(pb))
+                #print("Fails on original with {} points".format(nobs))
                 continue
             m2 = phase[mask].argsort()
             minphase = phase[mask][m2].min()

@@ -285,6 +285,8 @@ def GProcessing():
                                         'type': ntype}
                     kernelpars.append(thisgp.kernel.pars[0])
                 outjson_mapped = bandMap.remapBands(outjson)
+                #print(outjson_mapped.keys())
+                #print(outjson.keys())
                 if len(outjson_mapped.keys()) > 0:
                     with open(destination + objname+'_gpsmoothed.json', mode='w') as f:
                         json.dump(outjson_mapped, f, indent=2, sort_keys=True)
