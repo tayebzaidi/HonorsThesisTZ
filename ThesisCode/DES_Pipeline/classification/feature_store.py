@@ -6,6 +6,7 @@ import json
 import featureExtraction
 import numpy as np
 import bandMap
+import pickle
 
 def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
     """
@@ -31,6 +32,7 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
     num_classes = 3
 
     lightcurve_directory = '../gen_lightcurves/'
+    lightcurves_file = 'des_sn.p'
 
     #Define metrics for seeing lightcurve loss
     deleted_lightcurves = 0
@@ -40,14 +42,14 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
     #with open(filename, 'r') as f:
     #    #FIX THIS HACK LATER
     #    SNe_lightcurves = [line[:-17] + '_gpsmoothed.json' for line in f]
-    with open('des_sn.json', 'r') as f:
-        SNe_lightcurves = json.load(f)
+    with open(lightcurves_file, 'r') as f:
+        SNe_lightcurves = pickle.load(f)
 
     wavelet_coeffs = {}
     object_types = []
 
     for lightcurve in SNe_lightcurves:
-        
+
         lightcurve_mapped = SNe_lightcurves[lightcurve]
 
         #This hack removes the '_gpsmoothed.json' from the string to return the objname

@@ -234,7 +234,13 @@ def GProcessing():
 
                     # Generate resampled values from the Gaussian Process regression
                     thisgp, thisjd, thismag, thisdmag = outgp[filt]
-                    mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
+
+                    #I need to choose whether to sample at a frequency or
+                    # a fixed number of points
+                    ## FOR NOW, I'M CHOOSING A FIXED NUMBER OF POINTS
+                    #mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
+                    mod_dates = np.linspace(thisjd.min(), thisjd.max(), 100)
+
                     thismod, modcovar = thisgp.predict(thismag, mod_dates)
                     thismody, modcovary = thisgp.predict(thismag, thisjd)
                     thiserr = np.sqrt(np.diag(modcovar))

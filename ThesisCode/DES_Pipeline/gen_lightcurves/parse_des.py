@@ -89,7 +89,7 @@ def GProcessing():
     for i,lightcurve in enumerate(lightcurves):
 
 
-        #Eliminate the three header files
+        #Eliminate the three header files and the 4 filter files
         base_header = 'DES_BLIND+HOSTZ'
         if lightcurve.startswith(base_header):
             continue
@@ -126,7 +126,13 @@ def GProcessing():
         for filt in outfilters:
             # Generate resampled values from the Gaussian Process regression
             thisgp, thisjd, thismag, thisdmag = outgp[filt]
-            mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
+
+            #I need to choose whether to sample at a frequency or
+            # a fixed number of points
+            ## FOR NOW, I'M CHOOSING A FIXED NUMBER OF POINTS
+            #mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
+            mod_dates = np.linspace(thisjd.min(), thisjd.max(), 100)
+
             thismod, modcovar = thisgp.predict(thismag, mod_dates)
             thismody, modcovary = thisgp.predict(thismag, thisjd)
             thiserr = np.sqrt(np.diag(modcovar))
