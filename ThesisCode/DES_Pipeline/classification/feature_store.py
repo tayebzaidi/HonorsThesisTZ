@@ -26,11 +26,11 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
     wavelet_level = hyperparams['wavelet_level']
 
 
-    num_bands = 3
+    num_bands = 4
     num_coeffs = num_band_coeffs * num_bands
     num_classes = 3
 
-    lightcurve_directory = '../gen_lightcurves/gp_smoothed/'
+    lightcurve_directory = '../gen_lightcurves/'
 
     #Define metrics for seeing lightcurve loss
     deleted_lightcurves = 0
@@ -40,37 +40,30 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
     #with open(filename, 'r') as f:
     #    #FIX THIS HACK LATER
     #    SNe_lightcurves = [line[:-17] + '_gpsmoothed.json' for line in f]
-    SNe_lightcurves = os.listdir(lightcurve_directory)
+    with open('des_sn.json', 'r') as f:
+        SNe_lightcurves = json.load(f)
 
     wavelet_coeffs = {}
     object_types = []
 
     for lightcurve in SNe_lightcurves:
-        lightcurve_path = lightcurve_directory + lightcurve
-
-        if not os.path.isfile(lightcurve_path):
-            print("Cant find {}".format(lightcurve_path))
-            continue
-
-        with open(lightcurve_path, 'r') as f:
-            file_data = json.load(f)
+        
+        lightcurve_mapped = SNe_lightcurves[lightcurve]
 
         #This hack removes the '_gpsmoothed.json' from the string to return the objname
-        objname = lightcurve[:-16]
+        objname = lightcurve
         #print(objname)
 
         #print(list(file_data.keys()))
 
         deleted_filters = 0
         ## For now, take only filter 'g'
-        lightcurve_mapped = bandMap.remapBands(file_data)
-        #print(list(lightcurve_mapped.keys()))
 
-        req_filters = set(['g','r','i'])
+        req_filters = set(['g','r','i','z'])
 
         if req_filters.issubset(set(lightcurve_mapped.keys())):
             for filt in list(lightcurve_mapped.keys()):
-                if filt not in ['g', 'r', 'i']:
+                if filt not in ['g', 'r', 'i','z']:
                     deleted_filters += 1
                     #print("Deleted {}".format(filt))
                     del lightcurve_mapped[filt]

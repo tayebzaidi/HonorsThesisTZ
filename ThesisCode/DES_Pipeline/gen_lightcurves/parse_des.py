@@ -11,6 +11,7 @@ from astropy.visualization import hist
 from collections import Counter, OrderedDict
 from ANTARES_object import TouchstoneObject
 import scipy.interpolate as scinterp
+import pickle
 
 
 
@@ -65,7 +66,7 @@ def GProcessing():
     
     #Set up final json file
     des_sn = {}
-    outfile = 'des_sn.json'
+    outfile = 'des_sn.p'
 
 
     #Generate dictionary of all SN types from key file
@@ -164,7 +165,7 @@ def GProcessing():
         des_sn[object_id] = outjson
 
     with open(outfile, mode='w') as f:
-        json.dump(des_sn, f, indent=2, sort_keys=True)
+        pickle.dump(des_sn, f)
 
 
         #close JSON
