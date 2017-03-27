@@ -87,11 +87,12 @@ def GProcessing():
 
     for i,lightcurve in enumerate(lightcurves):
 
-        if i > 20:
-            break
+
         #Eliminate the three header files
         base_header = 'DES_BLIND+HOSTZ'
-        if lightcurve in [base_header+'.README', base_header+'.IGNORE',base_header+'.LIST']:
+        if lightcurve.startswith(base_header):
+            continue
+        elif lightcurve[4] in ['g', 'r', 'i', 'z']:
             continue
 
         tobj = TouchstoneObject.fromfile(base_path + lightcurve)
