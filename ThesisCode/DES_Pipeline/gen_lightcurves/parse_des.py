@@ -170,7 +170,7 @@ def GProcessing():
 
         des_sn[object_id] = outjson
 
-    with open(outfile, mode='w') as f:
+    with open(outfile, mode='wb') as f:
         pickle.dump(des_sn, f)
 
 
