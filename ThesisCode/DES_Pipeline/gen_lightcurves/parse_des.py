@@ -86,27 +86,31 @@ def GProcessing():
     lightcurves = os.listdir(base_path)
 
     for i,lightcurve in enumerate(lightcurves):
+
+        if i > 20:
+            break
         #Eliminate the three header files
         base_header = 'DES_BLIND+HOSTZ'
         if lightcurve in [base_header+'.README', base_header+'.IGNORE',base_header+'.LIST']:
             continue
-        
+
         tobj = TouchstoneObject.fromfile(base_path + lightcurve)
-        
+
         mwebv = tobj.header['mwebv']
-        
+
         #Look up the types for future analysis
-        object_key = SN_key[int(tobj.objectname)]
-        
+        object_id = int(tobj.objectname)
+        object_key = SN_key[object_id]
+
         sntype = object_key['sntype']
         confirm_type = object_key['confirm_type']
         hostz = object_key['hostz']
         hostzerr = object_key['hostzerr']
         genz = object_key['genz']
-        
-        
-        outbspline = tobj.spline_smooth(per = False, minobs = 6)
-        outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=6)
+
+
+        outbspline = tobj.spline_smooth(per=False, minobs=6)
+        outgp = tobj.gaussian_process_alt_smooth(per=False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=6)
         outjson = {}
 
         #Only loop over filters that both outgp and outbspline share
@@ -118,7 +122,6 @@ def GProcessing():
             print("Filter difference between bspline and GP")
 
         for filt in outfilters:
-
             # Generate resampled values from the Gaussian Process regression
             thisgp, thisjd, thismag, thisdmag = outgp[filt]
             mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
@@ -156,7 +159,8 @@ def GProcessing():
                             'type': sntype}
         if len(outjson.keys()) == 0:
             continue
-        des_sn[sn_id] = outjson
+
+        des_sn[object_id] = outjson
 
     with open(outfile, mode='w') as f:
         json.dump(des_sn, f, indent=2, sort_keys=True)
