@@ -131,7 +131,8 @@ def GProcessing():
             # a fixed number of points
             ## FOR NOW, I'M CHOOSING A FIXED NUMBER OF POINTS
             #mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
-            mod_dates = np.linspace(thisjd.min(), thisjd.max(), 100)
+            #### 128 chosen to allow for more levels of pywt analysis (2** divisible)
+            mod_dates = np.linspace(thisjd.min(), thisjd.max(), 128)
 
             thismod, modcovar = thisgp.predict(thismag, mod_dates)
             thismody, modcovary = thisgp.predict(thismag, thisjd)

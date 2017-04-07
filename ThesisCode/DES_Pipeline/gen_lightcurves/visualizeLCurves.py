@@ -6,13 +6,17 @@ import os
 import sys
 import numpy as np
 import math
+import pickle
 
 def main():
-    path = "./gp_smoothed/"
+    path = "./des_sn.p"
     output_lightcurves_file = 'selectedLightcurves'
     output_lightcurves = []
 
-    filenames = os.listdir(path)
+    with open(path, 'rb') as f:
+        lightcurves = pickle.load(f)
+
+    filenames = list(lightcurves.keys())
 
     #Randomize the file order to allow for fairer selection of the sub-sample
     filenames = np.random.permutation(filenames)
@@ -21,9 +25,8 @@ def main():
 
     for filename in filenames:
         j += 1
-        objname = filename
-        with open(os.path.join(path, filename), mode='r') as f:
-            file_data = json.load(f)
+        objname = str(filename)
+        file_data = lightcurves[filename]
 
         #Ignore all non-CSP or CfA entries
         #for k in list(file_data.keys()):

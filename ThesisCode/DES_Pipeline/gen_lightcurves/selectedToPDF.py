@@ -7,20 +7,24 @@ import os
 import sys
 import numpy as np
 import math
+import pickle
 
 def main():
     destination_file = 'AllSNe.pdf'
 
-    filename = 'selectedLightcurves'
+    filename = 'GauthamCurves'
     with open(filename, 'r') as f:
         lightcurves = [line.rstrip('\n') for line in f]
+
+    lightcurves_file = "./des_sn.p"
+    with open(lightcurves_file, 'rb') as f:
+        all_lightcurves = pickle.load(f)
 
     with PdfPages(destination_file) as pdf:
 
         for lightcurve in lightcurves:
-            lightcurve_path = '../gen_lightcurves/gp_smoothed/' + lightcurve
-            with open(lightcurve_path, 'r') as f:
-                file_data = json.load(f)
+            
+            file_data = all_lightcurves[int(lightcurve)]
 
             #Ignore all non-CSP or CfA entries
             # for k in list(file_data.keys()):
@@ -30,13 +34,13 @@ def main():
             #     continue
 
             #This hack removes the '_gpsmoothed.json' from the string to return the objname
-            objname = lightcurve[:-16]
+            objname = str(lightcurve)
 
             #Number of filters
             N = len(file_data.keys())
             print(N)
-            cols = 3
-            if N < 3:
+            cols = 2
+            if N < 2:
                 cols = 1
             rows = int(math.ceil(N / cols))
 
@@ -84,15 +88,15 @@ def main():
                 type = file_data[filt]['type']
 
                 ax = fig.add_subplot(gs[i])
-                ax.errorbar(mjd, mag, fmt='r', yerr=mag_err,label='Original', alpha=0.7, linestyle=None)
+                ax.errorbar(mjd, mag, fmt='o', ecolor='r', color='r', markersize=3, capsize=3,yerr=mag_err,label='Original', alpha=1.0)
                 ymin, ymax = ax.get_ylim()
-                ax.plot(model_phase, model_mag, '-k', label='GP')
-                ax.plot(model_phase, bspline_mag, '-b', label='BSpline')
+                ax.plot(model_phase, model_mag, '-k', label='GP',alpha=0.7)
+                ax.plot(model_phase, bspline_mag, '-b', label='BSpline',alpha=0.7)
                 ax.set_title(filt)
                 handles, labels = ax.get_legend_handles_labels()
-                if(not goodstatus):
-                    ax.set_ylim(ymin, ymax)
-                ax.invert_yaxis()
+                #if(not goodstatus):
+                #    ax.set_ylim(ymin, ymax)
+                #ax.invert_yaxis()
 
 
             fig.legend(handles, labels, title=type)

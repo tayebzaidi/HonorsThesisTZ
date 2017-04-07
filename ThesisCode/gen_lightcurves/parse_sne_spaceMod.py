@@ -219,14 +219,16 @@ def GProcessing():
                 #Fix the type for each of the arrays sent to the TouchstoneObject
                 band = np.array(band)
                 tobj = TouchstoneObject(objname, time, mag, magerr, band)
-                outbspline = tobj.spline_smooth(per = False, minobs = 10)
-                outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=10)
+                outbspline = tobj.spline_smooth(per = False, minobs = 6)
+                outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=6)
                 outjson = {}
 
                 #Only loop over filters that both outgp and outbspline share
                 #print("OutGP: ", list(outgp.keys()))
                 #print("OutBspline: ", list(outbspline.keys()))
                 outfilters = list(set(outgp.keys()) & set(outbspline.keys()))
+                if set(outgp.keys()) != set(outbspline.keys()):
+                    print("Different sets of filters!!!")
 
                 #Should I do bandMapping right here and head off all future difficulties?
 
@@ -237,9 +239,11 @@ def GProcessing():
 
                     #I need to choose whether to sample at a frequency or
                     # a fixed number of points
+
                     ## FOR NOW, I'M CHOOSING A FIXED NUMBER OF POINTS
                     #mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
-                    mod_dates = np.linspace(thisjd.min(), thisjd.max(), 100)
+                    ### Using 128 points to allow for multi-level wavelet analysis
+                    mod_dates = np.linspace(thisjd.min(), thisjd.max(), 128)
 
                     thismod, modcovar = thisgp.predict(thismag, mod_dates)
                     thismody, modcovary = thisgp.predict(thismag, thisjd)
@@ -249,23 +253,23 @@ def GProcessing():
                     thisbspline = outbspline[filt]
                     thismod_bspline = scinterp.splev(mod_dates, thisbspline)
                     #print(thismod_bspline)
-                    orig_val_bspline = scinterp.splev(thisjd, thisbspline)
+                    #orig_val_bspline = scinterp.splev(thisjd, thisbspline)
 
                     #This is inefficient, but will allow me to subtract the bspline
                     # before re-running the gaussian process regression
-                    temp_passband = np.array([filt] * len(thisjd))
-                    mag_subtracted = thismag - orig_val_bspline
+                    #temp_passband = np.array([filt] * len(thisjd))
+                    #mag_subtracted = thismag - orig_val_bspline
                     #print("Orig_val_bspline: ", orig_val_bspline)
                     #print("Mag sub: ", mag_subtracted)
-                    tobj_subtracted = TouchstoneObject(objname, thisjd, mag_subtracted, thisdmag, temp_passband)
-                    outgp_subtracted = tobj_subtracted.gaussian_process_alt_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=10)
+                    #tobj_subtracted = TouchstoneObject(objname, thisjd, mag_subtracted, thisdmag, temp_passband)
+                    #outgp_subtracted = tobj_subtracted.gaussian_process_alt_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=10)
                     #Since I only gave it values for a single filter, the output will only have one filter in the dictionary
-                    thisgp_subtracted, _, thismag_subtracted, _ = outgp_subtracted[filt]
-                    thismod_subtracted, modcovar_subtracted = thisgp_subtracted.predict(thismag_subtracted, mod_dates)
-                    thiserr_subtracted = np.sqrt(np.diag(modcovar_subtracted))
+                    #thisgp_subtracted, _, thismag_subtracted, _ = outgp_subtracted[filt]
+                    #thismod_subtracted, modcovar_subtracted = thisgp_subtracted.predict(thismag_subtracted, mod_dates)
+                    #thiserr_subtracted = np.sqrt(np.diag(modcovar_subtracted))
 
                     #Re-add back in the b-spline values for the magnitude
-                    thismod_subtracted = thismod_subtracted + thismod_bspline
+                    #thismod_subtracted = thismod_subtracted + thismod_bspline
 
                     goodstatus = True
 
@@ -285,7 +289,7 @@ def GProcessing():
                                         'modeldate':mod_dates.tolist(),\
                                         'modelmag':thismod.tolist(),\
                                         'modelerr':thiserr.tolist(),\
-                                        'modelmag_sub':thismod_subtracted.tolist(),\
+                                        #'modelmag_sub':thismod_subtracted.tolist(),\
                                         'bsplinemag':thismod_bspline.tolist(),\
                                         'goodstatus':goodstatus,\
                                         'type': ntype}

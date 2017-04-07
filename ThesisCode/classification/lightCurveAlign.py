@@ -13,16 +13,16 @@ def main():
     and align them
     """
     #First align the supernovae
-    #num_failed_shifts, failed_per, failed_per_norm = supernovae_align()
-    #print("Failed_shifts: ", num_failed_shifts)
-    #print("Failed per: ", failed_per)
-    #print("Failed per noralized: ", failed_per_norm)
-
-    #Then the periodics
-    num_failed_shifts, failed_per, failed_per_norm = periodic_align()
+    num_failed_shifts, failed_per, failed_per_norm = supernovae_align()
     print("Failed_shifts: ", num_failed_shifts)
     print("Failed per: ", failed_per)
     print("Failed per noralized: ", failed_per_norm)
+
+    #Then the periodics
+    #num_failed_shifts, failed_per, failed_per_norm = periodic_align()
+    #print("Failed_shifts: ", num_failed_shifts)
+    #print("Failed per: ", failed_per)
+    #print("Failed per noralized: ", failed_per_norm)
 
 def supernovae_align():
     """
@@ -135,6 +135,7 @@ def supernovae_align():
                                         'modelerr':model_err,\
                                         'bsplinemag':bspline_mag,\
                                         'goodstatus':goodstatus,\
+                                        'shift': model_phase[shift_index],\
                                         'type': stype}
 
         num_objects_processed += 1
