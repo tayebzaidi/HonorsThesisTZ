@@ -162,6 +162,17 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
     return scores, non_nested_estimators
 
 
+def customScore(X, y):
+    """
+    A dumb function to score the first vectors in an array the highest (descending order)
+    to simulate feature selection taking only the first k components
+    Uses the monotonically decreasing negative exponential to ensure consistency
+    """
+    num_features = X.shape[1]
+    F = np.array([40*np.exp(-i/20) for i in range(num_features)])
+    pval = np.repeat(np.array([0.01]), num_features)
+    return (F, pval)
+
 
 if __name__ == "__main__":
     hp = {'num_band_coeffs': 10, 'wavelet_type': 'sym2'}

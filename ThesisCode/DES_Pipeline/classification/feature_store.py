@@ -27,15 +27,6 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
     num_band_coeffs = hyperparams['num_band_coeffs']
     wavelet_type = hyperparams['wavelet_type']
     wavelet_level = hyperparams['wavelet_level']
-    training_set = hyperparams['training_set']
-
-    if training_set == "test_non_rep":
-        num_components = hyperparams['num_components']
-    elif training_set == "test_rep":
-        num_components = hyperparams['num_components']
-        objs = hyperparams['already_stored']
-    else:
-        num_components = False
 
     num_bands = 4
     num_coeffs = num_band_coeffs * num_bands
@@ -90,18 +81,7 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
 
         if len(lightcurve_mapped) == 0:
             print("No values in the file")
-            continue
-
-        #Generate the non-representative set if that is chosen
-        if training_set == "non_rep":
-            if lightcurve_mapped['g']['confirm_type'] == -9:
-                deleted_lightcurves += 1
-                #print("Deleted lcurve")
-                continue
-        elif training_set == "test_non_rep":
-            if lightcurve_mapped['g']['confirm_type'] != -9:
-                deleted_lightcurves += 1
-                continue            
+            continue      
 
         wavelet_coeffs[objname] = {}
 
@@ -117,17 +97,6 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
         #if i > 8:
         #    break
 
-    if training_set == "rep":
-        wavelet_coeffs, objs = extract_rand_select(wavelet_coeffs)
-    elif training_set == "test_rep":
-        wavelet_coeffs = extract_select(wavelet_coeffs, objs)
-
-    #If the SWT is chosen, use PCA to reduce dimensionality
-    #if wavelet_type != 'bagidis':
-    #    if num_components:
-    #        wavelet_coeffs, n_coeffs = return_pca(wavelet_coeffs, num_components)
-    #    else:
-    #        wavelet_coeffs, n_coeffs = return_pca(wavelet_coeffs)
 
     print("Deleted lightcurves: ", deleted_lightcurves)
     print("Analyzed Lightcurves: ", len(wavelet_coeffs))
