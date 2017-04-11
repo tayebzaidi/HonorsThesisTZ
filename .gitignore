@@ -8,3 +8,4 @@ ThesisCode/DES_Pipeline/classification/wavelet_coeffs.json
 ThesisCode/DES_Pipeline/gen_lightcurves/des_sn.p
 *.json
 *.pdf
+*.p

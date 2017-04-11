@@ -18,8 +18,11 @@ def get_bagidis_coeffs(lightcurve, num_band_coeffs=10):
     """
     num_bands = len(list(lightcurve.keys()))
     all_coeffs = np.zeros((num_band_coeffs*num_bands,))
+    lightcurve_keys = list(lightcurve.keys())
+    #Make sure the bands are in order in the coefficients
+    lightcurve_keys = sorted(lightcurve_keys)
 
-    for i, filt in enumerate(lightcurve):
+    for i, filt in enumerate(lightcurve_keys):
         magnitude = lightcurve[filt]['modelmag']
 
         bagidis = importr('Bagidis')
@@ -28,7 +31,7 @@ def get_bagidis_coeffs(lightcurve, num_band_coeffs=10):
         bagidis_coeffs = bagidis_lcurve.rx2('detail')[1:num_band_coeffs+1]
         bagidis_coeffs = np.array(bagidis_coeffs)
 
-        all_coeffs[i*num_band_coeffs:(i+1)*num_band_coeffs] = bagidis_coeffs
+        all_coeffs[i::num_bands] = bagidis_coeffs
         #print(bagidis_coeffs.shape)
         #print(all_coeffs)
 
@@ -39,17 +42,25 @@ def get_pywt_wav_coeffs(lightcurve, wav_type, num_levels, num_band_coeffs=10):
     This particular function draws from Michelle Lochner's code in https://github.com/LSSTDESC/snmachine
     """
 
-    num_points = 128
-    #print(num_points)
+    num_points = len(lightcurve[list(lightcurve.keys())[0]]['modelmag'])
     num_bands = len(list(lightcurve.keys()))
+    num_band_coeffs = num_points*num_levels
     all_coeffs = np.zeros((num_points*num_levels*num_bands,))
 
-    for i, filt in enumerate(lightcurve):
-        magnitude = lightcurve[filt]['modelmag']
-        #print(len(magnitude))
+    lightcurve_keys = list(lightcurve.keys())
+    #Make sure the bands are in order in the coefficients
+    lightcurve_keys = sorted(lightcurve_keys)
 
-        [(_,swt_coeffs)] = np.array(pywt.swt(magnitude, wav_type, level=num_levels))
-        all_coeffs[i*num_points:(i+1)*num_points] = swt_coeffs
+    for i, filt in enumerate(lightcurve_keys):
+        magnitude = lightcurve[filt]['modelmag']
+
+        sc_detail_coeffs = pywt.swt(magnitude, wav_type, level=num_levels)
+        #Extract only the detail coefficients from the the levels of wavelet_analysis
+        detail_coeffs = np.zeros(len(magnitude)*num_levels)
+        for j in range(num_levels):
+            detail_coeffs[j*num_points:(j+1)*num_points] = sc_detail_coeffs[j][1]
+        
+        all_coeffs[i*num_band_coeffs:(i+1)*num_band_coeffs] = detail_coeffs
 
     return all_coeffs
 

@@ -16,6 +16,7 @@ import multiprocessing
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from sklearn.feature_selection import SelectKBest
+from collections import Counter
 
 n_cpu = multiprocessing.cpu_count() + 2
 
@@ -30,42 +31,21 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
     Returns:
         tuple of (accuracy, avg_precision, avg_recall, avg_fscore)
     """
-
+    print("Beginning optimized classification")
     #Get hyperparameter values
     num_band_coeffs = hyperparams['num_band_coeffs']
 
     #Load the wavelet coefficients from the specified file
     with open(input_file, 'r') as f:
         wavelet_coeffs = json.load(f)
-
+ 
     wavelet_type = hyperparams['wavelet_type']
-    if wavelet_type != 'bagidis':
-        example_entry = wavelet_coeffs[list(wavelet_coeffs)[0]]
-        num_coeffs = len(example_entry['coeffs'])
-    else:
-        num_bands = 3
-        num_coeffs = num_band_coeffs * num_bands
+    example_entry = wavelet_coeffs[list(wavelet_coeffs)[0]]
+    num_coeffs = len(example_entry['coeffs'])
+
     num_classes = 2
 
-    test_train_data = np.zeros((len(list(wavelet_coeffs)), num_coeffs+1))
-    print(num_coeffs)
-
-    for i, obj in enumerate(wavelet_coeffs):
-
-        test_train_data[i,0:num_coeffs] = wavelet_coeffs[obj]['coeffs']
-
-        type_1a = ['Ia', 1]
-        type_2 = ['II', 2, 21, 22]
-
-        if wavelet_coeffs[obj]['type'] in type_1a:
-            test_train_data[i, num_coeffs] = 1
-        elif wavelet_coeffs[obj]['type'] in type_2:
-            test_train_data[i, num_coeffs] = 0
-        else:
-            test_train_data[i, num_coeffs] = 0
-
-    #print([wavelet_coeffs[obj]['type'] for obj in wavelet_coeffs])
-    #print(test_train_data[:, num_coeffs])
+    test_train_data = label_class(wavelet_coeffs, num_coeffs)
 
     #Split the data into test and train data
     #First randomize the object order to eliminate bias towards object_type
@@ -75,9 +55,11 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
 
     X = test_train_data[:,0:num_coeffs]
     y = np.ravel(test_train_data[:,num_coeffs])
+    print(y)
 
-    #X = X[0:100,:]
-    #y = y[0:100]
+    ## Reduce training set size drastically for initial testing
+    #X = X[0:500,:]
+    #y = y[0:500]
 
     #print(X[0:10,:])
 
@@ -88,33 +70,39 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
 
     #print(X[0:10,:])
 
-    #Implement PCA on both the BAGIDIS coefficients and the SWT coeffs
-    #Modeled after nested CV and dim reduction with Pipeline examples for sklearn
+    #Model the nested cross validation off of the scikit learn example
     NUM_TRIALS = 5
     verbosity=0
 
+    # Set up possible values of parameters to optimize over
+    num_feature_options_n = range(40, 130, 4)
+    num_feature_options_k = range(2, 20, 1)
+    num_estimators_range = range(600,700,100)
+
+    #TESTING to see if Pipeline functions
+    #num_feature_options = range(10,20,2)
+    #num_estimators_range = range(300,600,100)
+
     if wavelet_type == 'bagidis':
         pipeline = Pipeline([
-                        ('reduce_dim', SelectKBest()),
-                        ('classify', RandomForestClassifier())
+                        ('reduce_dim', SelectKBest(customScore)),
+                        ('classify', RandomForestClassifier(oob_score=True))
         ])
-        # Set up possible values of parameters to optimize over
-        num_feature_options = range(10, 30, 2)
         p_grid = {
-                    'reduce_dim__k': num_feature_options,
-                    'classify__n_estimators': range(300, 700, 100)
+                    'reduce_dim__k': num_feature_options_k,
+                    'classify__n_estimators': num_estimators_range
         }
     else:
         #Do PCA for non-bagidis wavelets
         pipeline = Pipeline([
                         ('reduce_dim', PCA()),
-                        ('classify', RandomForestClassifier())
+                        ('classify', RandomForestClassifier(oob_score=True))
         ])
         # Set up possible values of parameters to optimize over
-        num_feature_options = range(10, 30, 2)
+       
         p_grid = {
-                    'reduce_dim__n_components': num_feature_options,
-                    'classify__n_estimators': range(300, 700, 100)
+                    'reduce_dim__n_components': num_feature_options_n,
+                    'classify__n_estimators': num_estimators_range
         }        
 
     # Arrays to store scores
@@ -133,8 +121,8 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
 
         # Non_nested parameter search and scoring
         #clf = RandomizedSearchCV(estimator=svr, param_distributions=p_grid, cv=inner_cv, n_jobs=n_cpu, scoring="f1", verbose=5)
-        clf = RandomizedSearchCV(estimator=pipeline, param_distributions=p_grid, cv=inner_cv, n_jobs=n_cpu, scoring="f1",verbose=verbosity)
-        print("Made it through innercv", i)
+        clf = RandomizedSearchCV(estimator=pipeline, param_distributions=p_grid, cv=inner_cv, n_jobs=n_cpu, scoring="roc_auc",verbose=verbosity)
+        #print("Made it through innercv", i)
         clf.fit(X, y)
         print("Fitted the classifiers")
         non_nested_scores[i] = clf.best_score_
@@ -144,118 +132,64 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
         print(clf.best_score_)
 
         # Nested CV with parameter optimization
-        nested_score = cross_val_score(clf, X=X, y=y, cv=outer_cv, scoring='f1',verbose=verbosity)
+        #nested_score = cross_val_score(clf, X=X, y=y, cv=outer_cv, scoring='f1',verbose=verbosity)
         #nested_score_svm = cross_val_score(clf_svm, X=X, y=y, cv=outer_cv, scoring='roc_auc')
-        print("Made it through outercv", i)
-        nested_scores[i] = nested_score.mean()
+        #print("Made it through outercv", i)
+        #nested_scores[i] = nested_score.mean()
         #nested_scores_svm[i] = nested_score_svm.mean()
     
 
     print(non_nested_scores)
     print(nested_scores)
-    #print("")
-    #print(non_nested_scores)
-    #print(nested_scores_svm)
-    #score_difference = non_nested_scores - nested_scores
-    '''test_train_data = np.random.permutation(test_train_data)
+    score_difference = non_nested_scores - nested_scores
 
-
-    #print(y)
-    #print(X,y)
-    #print(X.shape, y.shape)
-
-    #y = label_binarize(y, classes=[0,1,2])
+    print("Average difference of {0:6f} with std. dev. of {1:6f}."
+        .format(score_difference.mean(), score_difference.std()))
     
-    #Set proportions to be used for test/train/validation
-    test_prop = 0.2
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_prop)
-    #test_prop = 1 - train_prop
-
-    #print(X_train.shape, y_train.shape)
-
-    #Use the proportions to calculate row indices
-    #split_idx = int(test_train_data.shape[0] * train_prop)
-
-    #train = test_train_data[0:split_idx,:]
-    #test = test_train_data[split_idx:,:]
-
-    #print(train.shape)
-    #print(test.shape)
-    #print(train[:,num_coeffs].shape)
-
-    #Setup the Random Forest Classifier
-    forest = RandomForestClassifier(n_estimators=100)
-
-    #scores = cross_val_score(forest, test_train_data[:, 0:num_coeffs], test_train_data[:,num_coeffs], cv=10)
-    #print(y_train.shape)
-    #print(np.ravel(y_train).shape)
-    #y_train = np.ravel(y_train)
-    forest.fit(X_train, y_train)
-
-    output = forest.predict_proba(X_test)
-    y_score = forest.predict(X_test)
-
-    print(output)
-
-    # Compute Precision-Recall and plot curve
-    #precision = dict()
-    #recall = dict()
-    #average_precision = dict()
-    #for i in range(num_classes):
-    #    precision[i], recall[i], _ = precision_recall_curve(y_test[:, i],
-    #                                                        y_score[:, i])
-    #    average_precision[i] = average_precision_score(y_test[:, i], y_score[:, i])
-
-    # Compute micro-average ROC curve and ROC area
-    #precision["micro"], recall["micro"], _ = precision_recall_curve(y_test.ravel(), y_score.ravel())
-    #average_precision["micro"] = average_precision_score(y_test, y_score, average="micro")
-
-    #print("Random Forest Regression: ", scores)
-    #print(np.sum(y_score == y_test))
-    #print(output)
-
-    #print(y_score)
-    #print(y_test)
-    accuracy = np.sum(y_score == y_test)/len(y_test)
-    precisions = np.zeros(num_classes)
-    recalls = np.zeros(num_classes)
-    fscores = np.zeros(num_classes)
-
-    #Calculation adapted from Michelle Lochner's code for classification
-    #Using 0.5 as threshold for classification
-    for chosen_class in range(num_classes):
-        print(chosen_class)
-        Y_bool = (y_test == chosen_class)
-        preds = (output[:,chosen_class] >= 0.5)
-        #print(Y_bool)
-        #print(preds)
-
-        TP = (preds & Y_bool).sum()
-        FP = (preds & ~Y_bool).sum()
-        TN = (preds & ~Y_bool).sum()
-        FN = (~preds & Y_bool).sum()
-
-        print("TP: ", TP)
-        print("FP: ", FP)
-        print("TN: ", TN)
-
-        precision = TP/(TP + FP)
-        recall = TP/(TP+FN)
-        precisions[chosen_class] = precision
-        recalls[chosen_class] = recall
-        fscores[chosen_class] = 2 * precision * recall / (precision + recall)
-
-    avg_precision = np.mean(precision)
-    avg_recall = np.mean(recall)
-    avg_fscore = np.mean(fscores)
-    print(precisions, avg_precision)
-    print(recalls, avg_recall)
-    print(fscores, avg_fscore)'''
-    #print(accuracy)
+    scores = [non_nested_scores, nested_scores]
+    original_data = [X, y]
 
     #with open('waveletcoeffs.json', 'w') as out:
     #    json.dump(wavelet_coeffs, out)
-    return non_nested_estimators
+    return scores, non_nested_estimators, original_data
+
+
+def label_class(wavelet_coeffs, num_coeffs):
+    feature_class_array = np.zeros((len(list(wavelet_coeffs)), num_coeffs+1))
+    type_array = []
+
+    for i, obj in enumerate(wavelet_coeffs):
+        #print(len(wavelet_coeffs[obj]['coeffs']))
+        feature_class_array[i,0:num_coeffs] = wavelet_coeffs[obj]['coeffs']
+
+        type_1a = ['Ia', 1]
+        type_2 = ['II', 2, 21, 22]
+        type_1bc = ['Ib', 'Ib/c', 'Ic', 3, 32, 33]
+
+        type_array.append(wavelet_coeffs[obj]['type'])
+
+        if wavelet_coeffs[obj]['type'] in type_1a:
+            feature_class_array[i, num_coeffs] = 1
+        elif wavelet_coeffs[obj]['type'] in (type_2 or type_1bc):
+            feature_class_array[i, num_coeffs] = 0
+        else:
+            feature_class_array[i, num_coeffs] = 0
+
+    print(Counter(type_array))
+    return feature_class_array
+
+def customScore(X, y):
+    """
+    A dumb function to score the first vectors in an array the highest (descending order)
+    to simulate feature selection taking only the first k components
+    Uses the monotonically decreasing negative exponential to ensure consistency
+    """
+    num_features = X.shape[1]
+    features_per_band = 50
+    F = [40*np.exp(-i/20) for i in range(num_features)]
+    F = np.array(F)
+    pval = np.repeat(np.array([0.01]), num_features)
+    return (F, pval)
 
 
 if __name__ == "__main__":
