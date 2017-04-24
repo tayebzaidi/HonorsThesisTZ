@@ -48,6 +48,7 @@ def supernovae_align():
     phase_max = 50
 
     total_failed_shifts = 0
+    total_successful_shifts = 0
     failed_shifts_per = 0
     failed_shifts_per_norm = 0
     num_objects_processed = 0
@@ -55,6 +56,7 @@ def supernovae_align():
     for lightcurve_file in lightcurve_filenames:
         lightcurve_path = source_folder + lightcurve_file
         #This hack removes the '_gpsmoothed.json' from the string to return the objname
+        print(lightcurve_file)
         objname = lightcurve_file[:-16]
 
         print("Object Name: ", objname)
@@ -140,6 +142,7 @@ def supernovae_align():
 
         num_objects_processed += 1
         total_failed_shifts += num_failed_shifts
+        total_successful_shifts += num_shifts
 
         if len(aligned_lightcurve.keys()) > 0:
             with open(destination + objname + '_aligned_lc.json', mode='w') as f:
@@ -149,7 +152,7 @@ def supernovae_align():
                                     (num_objects_processed-1)*failed_shifts_per)\
                                     /(num_objects_processed)
 
-
+    print(total_failed_shifts, total_successful_shifts)
     return (total_failed_shifts, failed_shifts_per, failed_shifts_per_norm)
 
 def periodic_align():

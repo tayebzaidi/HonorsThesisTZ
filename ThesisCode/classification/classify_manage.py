@@ -32,7 +32,7 @@ def run_pipeline(wavelet_type, wavelet_level, coeffs_file, outfile, num_band_coe
                 print(estimator.best_score_)
 
             print("Storing estimators")
-            dump_file = [estimators, original_data]
+            dump_file = [estimators, original_data, scores]
             with open(estimator_file, 'wb') as f:
                 pickle.dump(dump_file, f)
                 #print(estimator.clf)

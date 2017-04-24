@@ -116,8 +116,10 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
         # Choose cross-validation techniques for the inner and outer loops,
         # independently of the dataset.
         # E.g "LabelKFold", "LeaveOneOut", "LeaveOneLabelOut", etc.
-        inner_cv = KFold(n_splits=4, shuffle=True, random_state=i)
-        outer_cv = KFold(n_splits=4, shuffle=True, random_state=i)
+        inner_cv = KFold(n_splits=5, shuffle=True, random_state=i)
+        outer_cv = KFold(n_splits=5, shuffle=True, random_state=i)
+        #print(inner_cv, outer_cv)
+        #sys.exit()
 
         # Non_nested parameter search and scoring
         #clf = RandomizedSearchCV(estimator=svr, param_distributions=p_grid, cv=inner_cv, n_jobs=n_cpu, scoring="f1", verbose=5)
@@ -132,10 +134,11 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
         print(clf.best_score_)
 
         # Nested CV with parameter optimization
-        #nested_score = cross_val_score(clf, X=X, y=y, cv=outer_cv, scoring='f1',verbose=verbosity)
+        nested_score = cross_val_score(clf, X=X, y=y, cv=outer_cv, scoring='roc_auc',verbose=verbosity)
         #nested_score_svm = cross_val_score(clf_svm, X=X, y=y, cv=outer_cv, scoring='roc_auc')
         #print("Made it through outercv", i)
-        #nested_scores[i] = nested_score.mean()
+        nested_scores[i] = nested_score.mean()
+        print("Nested Score: ", nested_score.mean())
         #nested_scores_svm[i] = nested_score_svm.mean()
     
 
@@ -146,7 +149,8 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
     print("Average difference of {0:6f} with std. dev. of {1:6f}."
         .format(score_difference.mean(), score_difference.std()))
     
-    scores = [non_nested_scores, nested_scores]
+    #scores = [non_nested_scores, non_nested_scores.std()]
+    scores = [nested_scores, nested_scores.std()]
     original_data = [X, y]
 
     #with open('waveletcoeffs.json', 'w') as out:

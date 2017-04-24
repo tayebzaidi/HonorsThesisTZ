@@ -1,13 +1,13 @@
 setwd("/home/levicivita/HonorsThesisTZ/ThesisCode/gen_lightcurves/gp_smoothed")
 library("Bagidis");
 library("rjson");
-json_file <- "SN2002fk_gpsmoothed.json";
+json_file <- "SN2006gn_gpsmoothed.json";
 json_data <- fromJSON(paste(readLines(json_file), collapse=""));
 
 #mag = json_data$r$mag
 #mag = mag[seq(1, length(mag), 2)]
 modelmag = json_data$r$modelmag
-modelmag = modelmag[seq(1,length(modelmag), 5)]
+modelmag = modelmag[seq(1,length(modelmag), 8)]
 #modelmag_shift = shift(modelmag, 20)
 
 #modelmag = c(0,0,0,0,0,0,0,0,1,2,3,4,5,6,6,5,4,3,0,0,0,0)
@@ -33,8 +33,8 @@ dev.off()
 detail = modelmag_decomp$detail
 basis = modelmag_decomp$basis
 
-detail[10:length(detail)] <- 0
-basis[,10:dim(basis)[2]] <- 0
+detail[5:length(detail)] <- 0
+basis[,5:dim(basis)[2]] <- 0
 
 #detail <- detail[2:length(detail)]
 #basis <- basis[,2:dim(basis)[2]]
@@ -46,5 +46,5 @@ modelmag_rebuilt <- Bagidis::BUUHWE(modelmag)
 modelmag_rebuilt$series <- rebuilt_modelmag
 modelmag_rebuilt$detail <- detail[1:10]
 modelmag_rebuilt$basis <- basis[,1:10]
+Bagidis::BUUHWE.plot(modelmag_rebuilt, Color = FALSE, row.max = 5)
 Bagidis::BUUHWE.plot(modelmag_rebuilt, Color = FALSE)
-
