@@ -102,7 +102,7 @@ def GProcessing():
     Q = int(Q)
     for f in json_files[P:Q]:
     #for f in json_files:
-        print(f)
+        #print(f)
         with open(f, 'r') as j:
             data = json.load(j)
             objname = list(data.keys())[0]
@@ -217,9 +217,12 @@ def GProcessing():
             # Do Gaussian Process Fitting right here
             try:
                 #Fix the type for each of the arrays sent to the TouchstoneObject
+                print(f)
+
                 band = np.array(band)
                 tobj = TouchstoneObject(objname, time, mag, magerr, band)
                 outbspline = tobj.spline_smooth(per = False, minobs = 6)
+                initheta = (np.log(10**-4), np.log(10**5))
                 outgp = tobj.gaussian_process_alt_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=6)
                 outjson = {}
 
@@ -243,11 +246,16 @@ def GProcessing():
                     ## FOR NOW, I'M CHOOSING A FIXED NUMBER OF POINTS
                     #mod_dates = np.arange(thisjd.min(), thisjd.max(), 1.)
                     ### Using 128 points to allow for multi-level wavelet analysis
-                    mod_dates = np.linspace(thisjd.min(), thisjd.max(), 128)
+                    #mod_dates = np.linspace(thisjd.min(), thisjd.max(), 128)
 
-                    thismod, modcovar = thisgp.predict(thismag, mod_dates)
-                    thismody, modcovary = thisgp.predict(thismag, thisjd)
-                    thiserr = np.sqrt(np.diag(modcovar))
+                    rec, theta = thisgp.gp()
+                    mod_dates, thismod, thiserr = rec[:,0], rec[:,1], rec[:,2]
+
+                    rec_temp, _ = thisgp.gp(Xstar=thisjd)
+                    thismody = rec_temp[:,1]
+                    #thismod, modcovar = thisgp.predict(thismag, mod_dates)
+                    #thismody, modcovary = thisgp.predict(thismag, thisjd)
+                    #thiserr = np.sqrt(np.diag(modcovar))
 
                     # Generate resampled values from the spline model
                     thisbspline = outbspline[filt]
@@ -282,7 +290,7 @@ def GProcessing():
                         message = 'Outlier rejection failed (data: %.3f  model: %.3f  interp: %.3f)'%(mad_data, mad_test, mad_mod)
                         print(message)
 
-                    outjson[filt] = {'kernel':list(thisgp.kernel.pars),\
+                    outjson[filt] = {'kernel':list(theta),\
                                         'mjd':thisjd.tolist(),\
                                         'mag':thismag.tolist(),\
                                         'dmag':thisdmag.tolist(),\
@@ -293,7 +301,7 @@ def GProcessing():
                                         'bsplinemag':thismod_bspline.tolist(),\
                                         'goodstatus':goodstatus,\
                                         'type': ntype}
-                    kernelpars.append(thisgp.kernel.pars[0])
+                    kernelpars.append(theta)
                 outjson_mapped = bandMap.remapBands(outjson)
                 #print(outjson_mapped.keys())
                 #print(outjson.keys())

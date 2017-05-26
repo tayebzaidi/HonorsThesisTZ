@@ -19,6 +19,14 @@ from george import kernels
 import warnings
 import multiprocessing
 
+####Hacks to get GaPP working with python 3
+# Must have gapp directory in working folder
+sys.path.append('./GaPP/gapp/covfunctions')
+sys.path.append('./GaPP/gapp/')
+import cov
+import covariance
+import dgp
+
 
 warnings.simplefilter('once')
 
@@ -97,6 +105,7 @@ class TouchstoneObject:
         if self.per: #only set the period if we explicitly defined the object to be periodic
             self.best_period = best_period
 
+        self.num_points = 128 #Gaussian regression num points to allow for future wavelet analysis
         self.amplitude = None
         self.stats = None #order is min, max, mean, unbiased var, skewness (biased), fisher kurtosis (biased)
 
@@ -327,30 +336,40 @@ class TouchstoneObject:
                 #thismag_err= np.hstack((thismag_err, thismag_err, thismag_err))
 
                 #Latest modification from 0.5 to 1.4 in current state
-                kernel = kernels.ExpSine2Kernel(1.4, 1.0)
+                #kernel = kernels.ExpSine2Kernel(1.4, 1.0)
+                kernel = 'Exp2SineKernel'
             else:
                 #Latest modification from 100. to 500. 
                 #kernel = kernels.ExpSquaredKernel(500.) * kernels.DotProductKernel()
-                kernel = kernels.ConstantKernel(50.) * kernels.Matern52Kernel(50.) * kernels.DotProductKernel()
+                #kernel = kernels.ConstantKernel(50.) * kernels.Matern52Kernel(50.) * kernels.DotProductKernel()
+                kernel = 'ConstantKernel' + 'Matern52Kernel'
 
-            gp = george.GP(kernel, mean=thismag.mean())    
-            def nll(p):
-                gp.kernel[:] = p
-                ll = gp.lnlikelihood(thismag, quiet=True)
-                return -ll if np.isfinite(ll) else 1e25
+            ### REPLACING george WITH GaPP FOR GAUSSIAN PROCESS REGRESSION
+            #gp = george.GP(kernel, mean=thismag.mean())    
+            #def nll(p):
+            #    gp.kernel[:] = p
+            #    ll = gp.lnlikelihood(thismag, quiet=True)
+            #    return -ll if np.isfinite(ll) else 1e25
 
             # And the gradient of the objective function.
-            def grad_nll(p):
-                gp.kernel[:] = p
-                return -gp.grad_lnlikelihood(thismag, quiet=True)
-            gp.compute(thisphase, thismag_err)
-            p0 = gp.kernel.vector
-            if per:
-                results = op.minimize(nll, p0, jac=grad_nll, bounds=[(scalemin,scalemax),(0.,0.)])
-            else:
-                results = op.minimize(nll, p0, jac=grad_nll, bounds=[(scalemin, scalemax)]*len(kernel))
-            gp.kernel[:] = results.x    
-            # george is a little different than sklearn in that the prediction stage needs the input data
+            #def grad_nll(p):
+            #    gp.kernel[:] = p
+            #    return -gp.grad_lnlikelihood(thismag, quiet=True)
+            #gp.compute(thisphase, thismag_err)
+            #p0 = gp.kernel.vector
+            #if per:
+            #    results = op.minimize(nll, p0, jac=grad_nll, bounds=[(scalemin,scalemax),(0.,0.)])
+            #else:
+            #    results = op.minimize(nll, p0, jac=grad_nll, bounds=[(scalemin, scalemax)]*len(kernel))
+            #gp.kernel[:] = results.x    
+            ## george is a little different than sklearn in that the prediction stage needs the input data
+            
+            ###REPLACEMENT using GaPP
+
+            #Same initial values as Michelle Lochner (they are optimized anyways, should work reasonably well)
+            initheta = [50, 2]
+            gp = dgp.DGaussianProcess(thisphase, thismag, thismag_err, cXstar=(thisphase.min(), thisphase.max(), self.num_points), theta=initheta)
+
             outgp[pb] = (gp, thisphase, thismag, thismag_err)
         self.outgp = outgp
         return outgp
