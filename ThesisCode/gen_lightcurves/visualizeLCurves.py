@@ -8,11 +8,12 @@ import numpy as np
 import math
 
 def main():
-    path = "./gp_smoothed/"
-    output_lightcurves_file = 'selectedLightcurves'
+    path = "../data/OGLE/parsed/"
+    output_lightcurves_file = 'selectedLightcurves_OGLE'
     output_lightcurves = []
 
     filenames = os.listdir(path)
+    print(filenames)
 
     #Randomize the file order to allow for fairer selection of the sub-sample
     filenames = np.random.permutation(filenames)
@@ -22,8 +23,15 @@ def main():
     for filename in filenames:
         j += 1
         objname = filename
-        with open(os.path.join(path, filename), mode='r') as f:
-            file_data = json.load(f)
+        full_path = os.path.join(path, filename)
+        #print(full_path)
+        with open(full_path, mode='r') as f:
+            try:
+                file_data = json.load(f)
+                print(file_data)
+            except json.decoder.JSONDecodeError:
+                # Dealing with the .LIST file
+                continue
 
         #Ignore all non-CSP or CfA entries
         #for k in list(file_data.keys()):
@@ -31,6 +39,7 @@ def main():
         #        del file_data[k]
         if len(file_data) == 0:
             continue
+        print('t1')
 
         N = len(file_data)
         if N < 3:
@@ -76,7 +85,7 @@ def main():
         print("Number of files currently: ", len(output_lightcurves))
         print("Supernova Type: ", type)
         #keystroke = input("<Hit Enter To Close>")
-        if j>2:
+        if j>5:
             keystroke = 'q'
         else:
             print(i)

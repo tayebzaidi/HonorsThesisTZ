@@ -14,3 +14,4 @@ ThesisCode/DES_Pipeline/gen_lightcurves/des_sn.p
 *.pyc
 *.dat
 *.gz
+*.LIST

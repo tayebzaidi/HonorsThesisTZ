@@ -3,7 +3,7 @@ import json
 import sys
 import os
 
-def remapBands(lightcurve, z=0):
+def remapBands(lightcurve, z=0, per=False):
     """
     Remaps the bands of a given lightcurve file to the "grizy" of the DES survey
     Stages:
@@ -78,7 +78,15 @@ def remapBands(lightcurve, z=0):
         for survey in surveys_ranked:
             for original_passband in passband_options[passband_mapped]:
 
-                if survey in original_passband.lower():
+                if not per:
+                    if survey in original_passband.lower():
+                        found_mapping = True
+                        lightcurve_mapped[passband_mapped] = lightcurve[original_passband]
+                        lightcurve_mapped[passband_mapped]['mapping'] = '{} to {}'.format(original_passband, passband_mapped)
+                        #print("Survey {} chose, Passband {} changed to {}".format(survey, original_passband, passband_mapped))
+                        if found_mapping:
+                            break
+                else:
                     found_mapping = True
                     lightcurve_mapped[passband_mapped] = lightcurve[original_passband]
                     lightcurve_mapped[passband_mapped]['mapping'] = '{} to {}'.format(original_passband, passband_mapped)

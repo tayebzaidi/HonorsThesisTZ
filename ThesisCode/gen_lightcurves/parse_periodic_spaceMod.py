@@ -2,11 +2,15 @@ import sys
 import os
 import json
 import numpy as np
-from ANTARES_object import TouchstoneObject
+from ANTARES_object import LAobject
 import scipy.interpolate as scinterp
 from mpi4py import MPI
+sys.path.append('../classification/')
+import bandMap
 import pickle
+import glob
 import pandas as pd
+
 
 def periodicProcessing():
     """
@@ -16,7 +20,7 @@ def periodicProcessing():
     Each lightcurve is smoothed with a gaussian process
 
     Each band is treated separately and can fail separately
-    """
+    """ 
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -24,7 +28,9 @@ def periodicProcessing():
     print(procs_num, rank)
 
     #File selection (for now just the subset)
-    periodic_path = '../data/OGLE/parsed/'
+    periodic_path = '../data/OGLE/raw/'
+    destination = "../data/OGLE/parsed/" 
+
     #period_database = '/mnt/data/antares/aux/OGLE/'
     #Types where the name in the 'good_*.json' file differs from the actual file
     #check_types = ['dsct', 'acep', 'dpv']
@@ -46,7 +52,16 @@ def periodicProcessing():
     #        dat_files.append(os.path.join(type_directory, lightcurve_name + '.dat'))
 
     #print(dat_files)
-    periodic_files = glob(periodic_path + '*')
+
+    # Here's where I need to do the lookup
+    lookup_file = '../data/periods/period_data.json'
+
+    with open(lookup_file, 'r') as lfile:
+        period_data = json.load(lfile)
+
+
+    periodic_files = glob.glob(periodic_path + '*/*')
+    #print(periodic_files)
     nfiles = len(periodic_files)
     quotient = nfiles/procs_num+1
     P = rank*quotient
@@ -57,19 +72,20 @@ def periodicProcessing():
         Q = nfiles
     print(procs_num, rank, nfiles, quotient, P, Q)
 
-    destination = "../data/OGLE/parsed/" 
-
     kernelpars = []
+    list_outfiles = []
     P = int(P)
     Q = int(Q)
 
-    #print(periodic_files)
+    print(len(periodic_files[P:Q]))
 
-    for f in periodic_files[P:Q]:
+    for num, f in enumerate(periodic_files[P:Q]):
     #for f in dat_files:
 
         #Print object name
         #print(f)
+        if rank == 0:
+            print('Working on file number {}\r'.format(num), end="")
 
         #Load in the lightcurve using np.genfromtxt (there are faster options if necessary later)
         #The names of the columns are "HJD, mag, dmag, pb"
@@ -92,9 +108,9 @@ def periodicProcessing():
 
         locusID = objname
         #Fake obsids
-        obsids = np.array(['a']*len(time))
+        obsids = np.array(['a']*len(hjd))
         
-        zp=np.array([27.5]*len(time))
+        zp=np.array([27.5]*len(hjd))
         Z = 27.5 # Set the zeropoint for mag-flux conversion
         flux = 10**(-0.4 * (mag - Z))
         ## Alternate form in base e --> 10^10 * exp(-0.921034 * mag)
@@ -103,11 +119,11 @@ def periodicProcessing():
 
         #For now these objects are not being input as periodic objects
         # because they are already parsed
-        tobj = TouchstoneObject(locusids, objname, hjd, flux, fluxerr, obsids, passband, per=False)
+        tobj = LAobject(locusID, objname, hjd, flux, fluxerr, obsids, passband, zp, per=False)
         # I may need to mess around more with the parameters to get smooth curves
-
-        # Here's where I need to do the lookup
-        period = OGLE_periods[objname]['i'][0]
+        
+        obj_period = period_data[objname]['i'][0]
+        tobj.best_period = obj_period
 
         outgp = tobj.gaussian_process_smooth(per=True, scalemin=np.log(25.),
                                                  scalemax=np.log(5000.), minobs=10)
@@ -131,7 +147,7 @@ def periodicProcessing():
             thiserr = np.sqrt(np.diag(modcovar))
 
             #Rescale the resampled dates values to a 0-1 phase
-            print(mod_dates)
+            #print(mod_dates)
             goodstatus = True
 
             mad_test = np.median(np.abs(thismody - np.median(thismody)))
@@ -153,11 +169,17 @@ def periodicProcessing():
                                 'goodstatus':goodstatus,\
                                 'type': periodic_type}
             kernelpars.append(thisgp.get_parameter_vector()[0])
-
         
+        #print(outjson.keys())
+        outjson_mapped = bandMap.remapBands(outjson, per=True)
+        #print(outjson_mapped.keys())
         if len(outjson.keys()) > 0:
+            list_outfiles.append(objname + '_gpsmoothed.json')
             with open(destination + objname+'_gpsmoothed.json', mode='w') as f:
-                json.dump(outjson, f, indent=2, sort_keys=True)
+                json.dump(outjson_mapped, f, indent=2, sort_keys=True)
+
+    with open(destination + 'LCURVES.LIST', mode='w') as outfile:
+        outfile.write("\n".join(map(str, list_outfiles)))
 
 
 if __name__ == "__main__":
