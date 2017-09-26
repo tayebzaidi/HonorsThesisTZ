@@ -45,8 +45,9 @@ def run_pipeline(wavelet_type, wavelet_level, coeffs_file, outfile, num_band_coe
 
 if __name__=="__main__":
     #wavelet_types = ['sym2', 'db2', 'bagidis']
+    num_points = 128
     wavelet_types = ['bagidis', 'db2', 'sym2']
-    max_level = pywt.swt_max_level(128)
+    max_level = pywt.swt_max_level(num_points)
     wavelet_levels = [max_level, 1]
 
     for wavelet_type in wavelet_types:
