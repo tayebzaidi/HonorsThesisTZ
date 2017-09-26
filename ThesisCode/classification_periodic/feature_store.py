@@ -8,6 +8,7 @@ import featureExtraction
 import numpy as np
 import bandMap
 import pickle
+from collections import Counter
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
 
@@ -33,9 +34,9 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
     num_coeffs = num_band_coeffs * num_bands
     num_classes = 2
 
-    SNe_lightcurve_directory = '../data/OSC/parsed/'
-    #periodic_lightcurve_directory = '../data/OGLE/parsed/'
-    all_lightcurves = glob.glob(SNe_lightcurve_directory + '*.json')
+    #SNe_lightcurve_directory = '../data/OSC/parsed/'
+    periodic_lightcurve_directory = '../data/OGLE/parsed/'
+    all_lightcurves = glob.glob(periodic_lightcurve_directory + '*.json')
     print(all_lightcurves)
 
     #Define metrics for seeing lightcurve loss
@@ -219,24 +220,21 @@ def label_class(wavelet_coeffs, num_coeffs):
         #print(len(wavelet_coeffs[obj]['coeffs']))
         feature_class_array[i,0:num_coeffs] = wavelet_coeffs[obj]['coeffs']
 
-        type_1a = ['Ia', 1]
-        type_2 = ['II', 2, 21, 22]
-        type_1bc = ['Ib', 'Ib/c', 'Ic', 3, 32, 33]
+        class_mapping = {'lpv': 0, 
+                         'rrlyr': 1, 
+                         'ell': 2,
+                         'ecl': 3,
+                         'acep': 4
+                         }
 
         type_array.append(wavelet_coeffs[obj]['type'])
 
-        if wavelet_coeffs[obj]['type'] in type_1a:
-            feature_class_array[i, num_coeffs] = 1
-        elif wavelet_coeffs[obj]['type'] in (type_2 or type_1bc):
-            feature_class_array[i, num_coeffs] = 0
-        else:
-            feature_class_array[i, num_coeffs] = 0
+        obj_type = wavelet_coeffs[obj]['type']
+        feature_class_array[i, num_coeffs] = class_mapping[obj_type]
 
-    #print(Counter(type_array))
+    print(Counter(type_array))
     #print(feature_class_array)
     return feature_class_array
-
-
 
 
 if __name__ == "__main__":

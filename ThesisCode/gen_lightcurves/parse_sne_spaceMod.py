@@ -76,6 +76,7 @@ def GProcessing():
     procs_num = comm.Get_size()
     print(procs_num, rank)
     sne_files = glob.glob(source + 'sne-*/*json')
+    sne_files = np.random.permutation(sne_files)
     nfiles = len(sne_files)
     quotient = nfiles/procs_num+1
     P = rank*quotient
@@ -109,7 +110,7 @@ def GProcessing():
 
     print("There are a total of {} SNe lightcurves".format(len(sne_files)))
     for num, lcurve in enumerate(sne_files[P:Q]):
-        print("Starting file {:<7}".format(num))
+        print("Starting file {:<7}\r".format(num))
         with open(lcurve, 'r') as f:
             data = json.load(f)
         objname = list(data.keys())[0]
@@ -241,7 +242,7 @@ def GProcessing():
 
             tobj = LAobject(locusID, objname, time, flux, fluxerr, obsids, band, zp)
             #outbspline = tobj.spline_smooth(per = False, minobs = 6)
-            outgp = tobj.gaussian_process_smooth(per = False, scalemin=np.log(10**-4), scalemax=np.log(10**5), minobs=6)
+            outgp = tobj.gaussian_process_smooth(per = False, minobs=15)
             outjson = {}
 
             #Only loop over filters that both outgp and outbspline share
@@ -304,6 +305,11 @@ def GProcessing():
                     #print(message)
                     #lcurve_losses.update(['Outlier rejection failes'])
                     #continue
+
+                #Get rid of the straight line approximations
+                if np.ptp(thismod) < 2:
+                    continue
+
                 #print(thisgp.get_parameter_vector())
                 outjson[filt] = {'kernel':list(thisgp.get_parameter_vector()),\
                                     'mjd':thisjd.tolist(),\
@@ -337,6 +343,10 @@ def GProcessing():
     #endfor over files
     with open(destination + 'LCURVES.LIST', mode='w') as outfile:
         outfile.write("\n".join(map(str, list_outfiles)))
+    
+    loss_file = 'sne_losses.json'
+    with open(loss_file, mode='w') as lfile:
+        json.dump(lcurve_losses, lfile)
 
 
 

@@ -141,7 +141,7 @@ def periodicProcessing():
 
             #print("Thismag: ", thismag)
             #print("Length of thismag: ", len(thismag))
-            mod_dates = np.arange(0, 1, 0.01)
+            mod_dates = np.linspace(thisjd.min(), thisjd.max(), 128)
             thismod, modcovar = thisgp.predict(thismag, mod_dates)
             thismody, modcovary = thisgp.predict(thismag, thisjd)
             thiserr = np.sqrt(np.diag(modcovar))
