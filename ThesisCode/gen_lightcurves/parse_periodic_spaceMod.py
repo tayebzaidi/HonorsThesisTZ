@@ -121,10 +121,11 @@ def periodicProcessing():
             # because they are already parsed
             tobj = LAobject(locusID, objname, hjd, flux, fluxerr, obsids, passband, zp, per=False)
             # I may need to mess around more with the parameters to get smooth curves
-            
-            obj_period = period_data[objname]['i'][0]
-            tobj.best_period = obj_period
-
+            try:
+                obj_period = period_data[objname]['i'][0]
+                tobj.best_period = obj_period
+            except:
+                continue
             outgp = tobj.gaussian_process_smooth(per=True, minobs=10)
             #outbspline = tobj.spline_smooth(per=True, minobs=15)
             outjson = {}
