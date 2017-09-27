@@ -54,16 +54,16 @@ def periodicProcessing():
     #print(dat_files)
 
     # Here's where I need to do the lookup
-    lookup_file = '../data/periods/period_data.json'
+    lookup_file = '../data/period_data.json'
 
     with open(lookup_file, 'r') as lfile:
         period_data = json.load(lfile)
 
-
     periodic_files = glob.glob(periodic_path + '*/*')
+    print(periodic_files)
     #print(periodic_files)
     nfiles = len(periodic_files)
-    quotient = nfiles/procs_num+1
+    quotient = nfiles/procs_num + 1
     P = rank*quotient
     Q = (rank+1)*quotient
     if P > nfiles:
@@ -84,100 +84,100 @@ def periodicProcessing():
 
         #Print object name
         #print(f)
-        if rank == 0:
-            print('Working on file number {}\r'.format(num), end="")
+        try:
+            print('Working on file number {}\r'.format(num),end="")
 
-        #Load in the lightcurve using np.genfromtxt (there are faster options if necessary later)
-        #The names of the columns are "HJD, mag, dmag, pb"
+            #Load in the lightcurve using np.genfromtxt (there are faster options if necessary later)
+            #The names of the columns are "HJD, mag, dmag, pb"
 
-        #The pandas.read_csv is by far faster than the numpy implementation
-        #lightcurve = np.genfromtxt(f,dtype=['d','d', 'd', 'U1'], names=True)
-        lightcurve = pd.read_csv(f, delim_whitespace=True)
-        passband = lightcurve['pb']
-        hjd = lightcurve['HJD']
-        mag = lightcurve['mag']
-        magerr = lightcurve['dmag']
-        #The [:-4] eliminates the '.dat' from the end of the path
-        objname = os.path.basename(f)[:-4]
-        #print("Object name:", objname)
+            #The pandas.read_csv is by far faster than the numpy implementation
+            #lightcurve = np.genfromtxt(f,dtype=['d','d', 'd', 'U1'], names=True)
+            lightcurve = pd.read_csv(f, delim_whitespace=True)
+            passband = lightcurve['pb']
+            hjd = lightcurve['HJD']
+            mag = lightcurve['mag']
+            magerr = lightcurve['dmag']
+            #The [:-4] eliminates the '.dat' from the end of the path
+            objname = os.path.basename(f)[:-4]
+            #print("Object name:", objname)
 
-        # The periodic type is the directory just prior to the file (hence the [-2])
-        f = os.path.normpath(f)
-        periodic_type = f.split(os.sep)[-2]
-        #print(objname, periodic_type)
+            # The periodic type is the directory just prior to the file (hence the [-2])
+            f = os.path.normpath(f)
+            periodic_type = f.split(os.sep)[-2]
+            #print(objname, periodic_type)
 
-        locusID = objname
-        #Fake obsids
-        obsids = np.array(['a']*len(hjd))
-        
-        zp=np.array([27.5]*len(hjd))
-        Z = 27.5 # Set the zeropoint for mag-flux conversion
-        flux = 10**(-0.4 * (mag - Z))
-        ## Alternate form in base e --> 10^10 * exp(-0.921034 * mag)
-        ## Propagation of error formula --> abs(flux * -0.921034 * magerr)
-        fluxerr = np.abs(flux * -0.921034 * magerr)
-
-        #For now these objects are not being input as periodic objects
-        # because they are already parsed
-        tobj = LAobject(locusID, objname, hjd, flux, fluxerr, obsids, passband, zp, per=False)
-        # I may need to mess around more with the parameters to get smooth curves
-        
-        obj_period = period_data[objname]['i'][0]
-        tobj.best_period = obj_period
-
-        outgp = tobj.gaussian_process_smooth(per=True, scalemin=np.log(25.),
-                                                 scalemax=np.log(5000.), minobs=10)
-        #outbspline = tobj.spline_smooth(per=True, minobs=15)
-        outjson = {}
-
-        for filt in outgp:
-
-            #Generate resampled values from the Gaussian Process regression
-            thisgp, thisjd, thismag, thisdmag = outgp[filt]
-            #print("Thisjd:", thisjd)
-            #print("Length of Thisjd: ", len(thisjd))
-            #print("Min: ", thisjd.min())
-            #print("Max: ", thisjd.max())
-
-            #print("Thismag: ", thismag)
-            #print("Length of thismag: ", len(thismag))
-            mod_dates = np.linspace(thisjd.min(), thisjd.max(), 128)
-            thismod, modcovar = thisgp.predict(thismag, mod_dates)
-            thismody, modcovary = thisgp.predict(thismag, thisjd)
-            thiserr = np.sqrt(np.diag(modcovar))
-
-            #Rescale the resampled dates values to a 0-1 phase
-            #print(mod_dates)
-            goodstatus = True
-
-            mad_test = np.median(np.abs(thismody - np.median(thismody)))
-            mad_mod  = np.median(np.abs(thismod  - np.median(thismod )))
-            mad_data = np.median(np.abs(thismag  - np.median(thismag )))
+            locusID = objname
+            #Fake obsids
+            obsids = np.array(['a']*len(hjd))
             
-            if (mad_test - mad_data) > 0.5 or np.abs(mad_mod - mad_data) > 0.5:
-                goodstatus=False
-                message = 'Outlier rejection failed (data: %.3f  model: %.3f  interp: %.3f)'%(mad_data, mad_test, mad_mod)
-                #print(message)
+            zp=np.array([27.5]*len(hjd))
+            Z = 27.5 # Set the zeropoint for mag-flux conversion
+            flux = 10**(-0.4 * (mag - Z))
+            ## Alternate form in base e --> 10^10 * exp(-0.921034 * mag)
+            ## Propagation of error formula --> abs(flux * -0.921034 * magerr)
+            fluxerr = np.abs(flux * -0.921034 * magerr)
 
-            outjson[filt] = {'kernel':list(thisgp.get_parameter_vector()),\
-                                'mjd':thisjd.tolist(),\
-                                'mag':thismag.tolist(),\
-                                'dmag':thisdmag.tolist(),\
-                                'modeldate':mod_dates.tolist(),\
-                                'modelmag':thismod.tolist(),\
-                                'modelerr':thiserr.tolist(),\
-                                'goodstatus':goodstatus,\
-                                'type': periodic_type}
-            kernelpars.append(thisgp.get_parameter_vector()[0])
-        
-        #print(outjson.keys())
-        outjson_mapped = bandMap.remapBands(outjson, per=True)
-        #print(outjson_mapped.keys())
-        if len(outjson.keys()) > 0:
-            list_outfiles.append(objname + '_gpsmoothed.json')
-            with open(destination + objname+'_gpsmoothed.json', mode='w') as f:
-                json.dump(outjson_mapped, f, indent=2, sort_keys=True)
+            #For now these objects are not being input as periodic objects
+            # because they are already parsed
+            tobj = LAobject(locusID, objname, hjd, flux, fluxerr, obsids, passband, zp, per=False)
+            # I may need to mess around more with the parameters to get smooth curves
+            
+            obj_period = period_data[objname]['i'][0]
+            tobj.best_period = obj_period
 
+            outgp = tobj.gaussian_process_smooth(per=True, minobs=10)
+            #outbspline = tobj.spline_smooth(per=True, minobs=15)
+            outjson = {}
+
+            for filt in outgp:
+
+                #Generate resampled values from the Gaussian Process regression
+                thisgp, thisjd, thismag, thisdmag = outgp[filt]
+                #print("Thisjd:", thisjd)
+                #print("Length of Thisjd: ", len(thisjd))
+                #print("Min: ", thisjd.min())
+                #print("Max: ", thisjd.max())
+
+                #print("Thismag: ", thismag)
+                #print("Length of thismag: ", len(thismag))
+                mod_dates = np.linspace(thisjd.min(), thisjd.max(), 128)
+                thismod, modcovar = thisgp.predict(thismag, mod_dates)
+                thismody, modcovary = thisgp.predict(thismag, thisjd)
+                thiserr = np.sqrt(np.diag(modcovar))
+
+                #Rescale the resampled dates values to a 0-1 phase
+                #print(mod_dates)
+                goodstatus = True
+
+                mad_test = np.median(np.abs(thismody - np.median(thismody)))
+                mad_mod  = np.median(np.abs(thismod  - np.median(thismod )))
+                mad_data = np.median(np.abs(thismag  - np.median(thismag )))
+                
+                if (mad_test - mad_data) > 0.5 or np.abs(mad_mod - mad_data) > 0.5:
+                    goodstatus=False
+                    message = 'Outlier rejection failed (data: %.3f  model: %.3f  interp: %.3f)'%(mad_data, mad_test, mad_mod)
+                    #print(message)
+
+                outjson[filt] = {'kernel':list(thisgp.get_parameter_vector()),\
+                                    'mjd':thisjd.tolist(),\
+                                    'mag':thismag.tolist(),\
+                                    'dmag':thisdmag.tolist(),\
+                                    'modeldate':mod_dates.tolist(),\
+                                    'modelmag':thismod.tolist(),\
+                                    'modelerr':thiserr.tolist(),\
+                                    'goodstatus':goodstatus,\
+                                    'type': periodic_type}
+                kernelpars.append(thisgp.get_parameter_vector()[0])
+            
+            #print(outjson.keys())
+            outjson_mapped = bandMap.remapBands(outjson, per=True)
+            #print(outjson_mapped.keys())
+            if len(outjson.keys()) > 0:
+                list_outfiles.append(objname + '_gpsmoothed.json')
+                with open(destination + objname+'_gpsmoothed.json', mode='w') as f:
+                    json.dump(outjson_mapped, f, indent=2, sort_keys=True)
+        except:
+            continue
     with open(destination + 'LCURVES.LIST', mode='w') as outfile:
         outfile.write("\n".join(map(str, list_outfiles)))
 
