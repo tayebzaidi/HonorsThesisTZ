@@ -78,6 +78,7 @@ def periodicProcessing():
     Q = int(Q)
 
     print(len(periodic_files[P:Q]))
+    periodic_files = np.random.permutation(periodic_files)
 
     for num, f in enumerate(periodic_files[P:Q]):
     #for f in dat_files:
@@ -85,6 +86,8 @@ def periodicProcessing():
         #Print object name
         #print(f)
         try:
+            if os.path.isfile(objname + '_gpsmoothed.json'):
+                continue
             print('Working on file number {}\r'.format(num),end="")
 
             #Load in the lightcurve using np.genfromtxt (there are faster options if necessary later)
