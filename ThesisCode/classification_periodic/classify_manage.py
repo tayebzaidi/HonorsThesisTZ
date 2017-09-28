@@ -2,7 +2,7 @@
 import json
 import os, sys
 import feature_store
-import classify_SNe
+import classify_periodic
 import classify_nested
 import matplotlib.pyplot as plt
 import pickle
@@ -37,7 +37,7 @@ def run_pipeline(wavelet_type, wavelet_level, coeffs_file, outfile, num_band_coe
                 pickle.dump(dump_file, f)
                 #print(estimator.clf)
     else:
-        results = classify_SNe.classify_supernovae(hyperparams, input_file=coeffs_file)
+        results = classify_periodic.classify_supernovae(hyperparams, input_file=coeffs_file)
         print(results[0:3])
         with open(outfile, 'w') as f:
             json.dump(results, f)
@@ -65,5 +65,5 @@ if __name__=="__main__":
                 outfile = wavelet_type+"_"+str(wavelet_level)+"_results.json"
 
             num_band_coeffs = 50
-            nested_cross_val = True
+            nested_cross_val = False
             run_pipeline(wavelet_type, wavelet_level, coeffs_file, outfile, num_band_coeffs, nested_cross_val=nested_cross_val)
