@@ -60,7 +60,7 @@ def periodicProcessing():
         period_data = json.load(lfile)
 
     periodic_files = glob.glob(periodic_path + '*/*')
-    print(periodic_files)
+    #print(periodic_files)
     #print(periodic_files)
     nfiles = len(periodic_files)
     quotient = nfiles/procs_num + 1
@@ -86,7 +86,7 @@ def periodicProcessing():
         #Print object name
         #print(f)
         try:
-            if os.path.isfile(objname + '_gpsmoothed.json'):
+            if os.path.isfile(f):
                 continue
             print('Working on file number {}\r'.format(num),end="")
 
