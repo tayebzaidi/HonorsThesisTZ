@@ -39,8 +39,15 @@ def run_pipeline(wavelet_type, wavelet_level, coeffs_file, outfile, num_band_coe
     else:
         results = classify_SNe.classify_supernovae(hyperparams, input_file=coeffs_file)
         print(results[0:3])
+        bad_objs = results[-1]
+        bad_objs_file = 'misclassed_lcurves_list'
+
         with open(outfile, 'w') as f:
             json.dump(results, f)
+
+        with open(bad_objs_file, 'w') as f:
+            for objname in bad_objs:
+                f.write(objname + '_gpsmoothed.json\n')
 
 
 if __name__=="__main__":
@@ -65,5 +72,5 @@ if __name__=="__main__":
                 outfile = wavelet_type+"_"+str(wavelet_level)+"_results.json"
 
             num_band_coeffs = 50
-            nested_cross_val = True
+            nested_cross_val = False
             run_pipeline(wavelet_type, wavelet_level, coeffs_file, outfile, num_band_coeffs, nested_cross_val=nested_cross_val)

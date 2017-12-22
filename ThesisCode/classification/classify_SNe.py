@@ -42,9 +42,17 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
     num_classes = 2
 
 
-    test_train_data = label_class(wavelet_coeffs, num_coeffs)
+    test_train_data, objnames = label_class(wavelet_coeffs, num_coeffs)
 
-    test_train_data = np.random.permutation(test_train_data)
+    #print(test_train_data.shape)
+    arr = np.arange(test_train_data.shape[0])
+    #print(arr)
+    permutation_idx = np.random.permutation(arr)
+    #print(permutation_idx)
+
+    test_train_data = test_train_data[permutation_idx]
+    #print(test_train_data.shape)
+    objnames = objnames[permutation_idx]
 
     X = test_train_data[:,0:num_coeffs]
     y = np.ravel(test_train_data[:,num_coeffs])
@@ -82,14 +90,18 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
     f1 = f1_score(y, y_pred)
     auc_val = roc_auc_score(y, output[:,1])
 
+    misclassified_idxs = np.where(y != y_pred)
+    misclassified = objnames[misclassified_idxs]
+    print(misclassified)
 
-    results = [accuracy, f1, auc_val, tpr.tolist(), fpr.tolist(), thresholds.tolist()]
+    results = [accuracy, f1, auc_val, tpr.tolist(), fpr.tolist(), thresholds.tolist(), misclassified.tolist()]
     return results
 
 
 def label_class(wavelet_coeffs, num_coeffs):
     feature_class_array = np.zeros((len(list(wavelet_coeffs)), num_coeffs+1))
     type_array = []
+    objnames = []
 
     for i, obj in enumerate(wavelet_coeffs):
         #print(len(wavelet_coeffs[obj]['coeffs']))
@@ -99,8 +111,6 @@ def label_class(wavelet_coeffs, num_coeffs):
         type_2 = ['II', 2, 21, 22]
         type_1bc = ['Ib', 'Ib/c', 'Ic', 3, 32, 33]
 
-        type_array.append(wavelet_coeffs[obj]['type'])
-
         if wavelet_coeffs[obj]['type'] in type_1a:
             feature_class_array[i, num_coeffs] = 1
         elif wavelet_coeffs[obj]['type'] in (type_2 or type_1bc):
@@ -108,8 +118,12 @@ def label_class(wavelet_coeffs, num_coeffs):
         else:
             feature_class_array[i, num_coeffs] = 0
 
+        type_array.append(wavelet_coeffs[obj]['type'])
+        objnames.append(obj)
+
     print(Counter(type_array))
-    return feature_class_array
+    objnames = np.array(objnames)
+    return feature_class_array, objnames
 
 if __name__ == "__main__":
     hp = {'num_band_coeffs': 10, 'wavelet_type': 'sym2'}

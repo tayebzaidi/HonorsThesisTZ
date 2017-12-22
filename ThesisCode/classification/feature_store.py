@@ -60,13 +60,13 @@ def generate_decomposition(hyperparams, output_file='wavelet_coeffs.json'):
         deleted_filters = 0
         ## For now, take only filter 'g' and 'i'
 
-        req_filters = set(['g','i'])
+        req_filters = set(['g','r','i'])
 
         if req_filters.issubset(set(lightcurve_mapped.keys())):
             for filt in list(lightcurve_mapped.keys()):
-                if filt not in ['g','i']:
+                if filt not in ['g','r','i']:
                     deleted_filters += 1
-                    #print("Deleted {}".format(filt))
+                    print("Deleted {}".format(filt))
                     del lightcurve_mapped[filt]
             analyzed_lightcurves += 1
         else:

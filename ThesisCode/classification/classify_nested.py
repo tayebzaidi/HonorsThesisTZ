@@ -79,7 +79,7 @@ def classify_supernovae(hyperparams, input_file='wavelet_coeffs.json'):
     # Set up possible values of parameters to optimize over
     num_feature_options_n = range(40, 130, 4)
     num_feature_options_k = range(2, 20, 1)
-    num_estimators_range = range(200,201,100)
+    num_estimators_range = range(600,601,100)
 
     #TESTING to see if Pipeline functions
     #num_feature_options = range(10,20,2)
